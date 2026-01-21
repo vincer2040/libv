@@ -3,21 +3,21 @@
 static tests ts = {0};
 static int failed = 0;
 
-void vtest_add_test_(const test* test) {
+void vtest_add_test_(const test* t) {
     if (ts.length == ts.capacity) {
-        ts.capacity <<= 1;
         ts.capacity += 1;
-        ts.tests = realloc(ts.tests, ts.capacity);
+        ts.capacity <<= 1;
+        ts.tests = realloc(ts.tests, ts.capacity * sizeof(test));
         if (!ts.tests) {
             fprintf(stderr, "error allocating memory for tests\n");
             abort();
         }
     }
-    size_t name_length = strlen(test->suite_name) + strlen(test->test_name);
+    size_t name_length = strlen(t->suite_name) + strlen(t->test_name);
     if (name_length > ts.longest_name) {
         ts.longest_name = name_length;
     }
-    ts.tests[ts.length++] = *test;
+    ts.tests[ts.length++] = *t;
 }
 
 #define fail_test(fmt, ...)                                                    \
@@ -86,7 +86,8 @@ void _assert_ptr_nonnull(const void* a, const char* vara, const char* file,
     fail_test("ASSERTION FAILED(%s:%d) %s == NULL", file, line, vara);
 }
 
-void _assert_ptr_null(const void* a, const char* vara, const char* file, int line) {
+void _assert_ptr_null(const void* a, const char* vara, const char* file,
+                      int line) {
     if (a == NULL) {
         return;
     }
@@ -100,23 +101,38 @@ void _assert(bool cond, const char* cond_str, const char* file, int line) {
     fail_test("ASSERTION FAILED(%s:%d) %s", file, line, cond_str);
 }
 
-void vtest_run_tests_(void) {
+static void vtest_destroy(void) {
+    free(ts.tests);
+}
+
+int vtest_run_tests(void) {
     size_t amount_to_print = ts.longest_name + 3;
+    size_t num_passed = 0;
+    size_t num_failed = 0;
     for (size_t i = 0; i < ts.length; ++i) {
         test* t = &ts.tests[i];
         printf("%s.%s", t->suite_name, t->test_name);
-        size_t current_printed_length = strlen(t->suite_name) + strlen(t->test_name) + 1;
-        while (current_printed_length > amount_to_print) {
+        size_t current_printed_length =
+            strlen(t->suite_name) + strlen(t->test_name) + 1;
+        while (current_printed_length < amount_to_print) {
             printf(".");
             current_printed_length++;
         }
+        fflush(stdout);
         t->test_fn();
         if (failed) {
             printf("FAILED\n");
-            abort();
+            goto failed;
         } else {
             printf("PASSED\n");
+            num_passed++;
         }
+        failed = 0;
     }
-    printf("ALL TESTS PASSED\n");
+    printf("%zu/%zu tests passed\n", num_passed, ts.length);
+    vtest_destroy();
+    return 0;
+failed:
+    vtest_destroy();
+    return 1;
 }

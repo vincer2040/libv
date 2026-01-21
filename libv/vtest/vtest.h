@@ -40,25 +40,21 @@ void _assert_ptr_nonnull(const void* a, const char* vara, const char* file,
 void _assert_ptr_null(const void* a, const char* vara, const char* file,
                       int line);
 void _assert(bool cond, const char* cond_str, const char* file, int line);
-void vtest_run_tests_(void);
+int vtest_run_tests(void);
+// void vtest_destroy(void);
 
 #define TEST(suite_name_, test_name_)                                          \
-    static void vtest_##suite_name_##_##test_name_(void)
-
-#define VTEST_ADD_TEST(suite_name_, test_name_)                                \
-    do {                                                                       \
+    static void vtest_##suite_name_##_##test_name_(void);                      \
+    __attribute__((constructor)) static void                                   \
+        vstr_register_##suite_name_##_##test_name(void) {                     \
         test t = {                                                             \
             .suite_name = #suite_name_,                                        \
             .test_name = #test_name_,                                          \
             .test_fn = vtest_##suite_name_##_##test_name_,                     \
         };                                                                     \
         vtest_add_test_(&t);                                                   \
-    } while (0)
-
-#define VTEST_RUN_ALL()                                                        \
-    do {                                                                       \
-        vtest_run_tests();                                                     \
-    } while (0)
+    }                                                                          \
+    static void vtest_##suite_name_##_##test_name_(void)
 
 #define assert_int_eq(a, b) _assert_int_eq(a, b, #a, #b, __FILE__, __LINE__)
 #define assert_uint_eq(a, b) _assert_uint_eq(a, b, #a, #b, __FILE__, __LINE__)
