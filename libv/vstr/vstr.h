@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <uchar.h>
 
 LIBV_BEGIN
 
@@ -46,6 +47,27 @@ typedef struct {
     uint8_t is_large : 1;
 } vstr;
 
+static inline uint64_t vstr_strlen_u8(const char* s) {
+    const char* s_ = s;
+    for (; *s_; ++s_) {
+    }
+    return s_ - s;
+}
+
+static inline uint64_t vstr_strlen_u16(const char16_t* s) {
+    const char16_t* s_ = s;
+    for (; *s_; ++s_) {
+    }
+    return s_ - s;
+}
+
+static inline uint64_t vstr_strlen_u32(const char32_t* s) {
+    const char32_t* s_ = s;
+    for (; *s_; ++s_) {
+    }
+    return s_ - s;
+}
+
 static inline vstr vstr_new(void) {
     vstr self = {0};
     self.small_available = VSTR_SMALL_MAX_SIZE;
@@ -78,7 +100,7 @@ static inline vstr vstr_from_length(const vstr_policy* policy, const char* buf,
 }
 
 static inline vstr vstr_from(const vstr_policy* policy, const char* buf) {
-    return vstr_from_length(policy, buf, strlen(buf));
+    return vstr_from_length(policy, buf, vstr_strlen_u8(buf));
 }
 
 static inline void vstr_free(const vstr_policy* policy, vstr* self) {
@@ -160,7 +182,8 @@ static inline int vstr_large_push_char(const vstr_policy* policy,
 
 static inline void vstr_make_large(const vstr_policy* policy, vstr* self) {
     vstr_large large =
-        vstr_large_from_length(policy, self->string.small, VSTR_SMALL_MAX_SIZE - self->small_available);
+        vstr_large_from_length(policy, self->string.small,
+                               VSTR_SMALL_MAX_SIZE - self->small_available);
     self->string.large = large;
     self->small_available = 0;
     self->is_large = 1;
@@ -180,7 +203,8 @@ static inline int vstr_push_char(const vstr_policy* policy, vstr* self,
     return LIBV_OK;
 }
 
-static inline int vstr_large_make_available(const vstr_policy* policy, vstr_large* self, uint64_t size) {
+static inline int vstr_large_make_available(const vstr_policy* policy,
+                                            vstr_large* self, uint64_t size) {
     if (self->capacity - 1 > self->length + size) {
         return LIBV_OK;
     }
@@ -228,7 +252,7 @@ static inline int vstr_cat_string_length(const vstr_policy* policy, vstr* self,
 
 static inline int vstr_cat_string(const vstr_policy* policy, vstr* self,
                                   const char* string) {
-    return vstr_cat_string_length(policy, self, string, strlen(string));
+    return vstr_cat_string_length(policy, self, string, vstr_strlen_u8(string));
 }
 
 #define VSTR_DECLARE_DEFAULT(name_)                                            \
