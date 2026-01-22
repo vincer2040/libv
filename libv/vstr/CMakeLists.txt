@@ -16,7 +16,6 @@ target_compile_options(vstr_test
     -fstack-protector-strong
     -Werror=format-security
     -Werror=implicit-function-declaration
-    # -O2
     -g
 )
 
@@ -26,7 +25,7 @@ target_link_libraries(
 )
 
 target_include_directories(vstr_test PRIVATE
-    ${CMAKE_SOURCE_DIR}   # libv root
+    ${CMAKE_SOURCE_DIR}
 )
 
 add_test(NAME vstr COMMAND vstr_test)
