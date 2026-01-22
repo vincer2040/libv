@@ -158,13 +158,22 @@ static inline int vstr_large_push_char(const vstr_policy* policy,
     return LIBV_OK;
 }
 
-static inline void vstr_make_large(const vstr_policy* policy, vstr* self) {
-    vstr_large large =
-        vstr_large_from_length(policy, self->string.small,
-                               VSTR_SMALL_MAX_SIZE - self->small_available);
+static inline int vstr_make_large(const vstr_policy* policy, vstr* self,
+                                  uint64_t length_to_add) {
+    vstr_large large = {0};
+    large.capacity =
+        (VSTR_SMALL_MAX_SIZE - self->small_available) + length_to_add + 1;
+    large.data = policy->alloc->alloc(large.capacity);
+    if (!large.data) {
+        return LIBV_ERR;
+    }
+    large.length = VSTR_SMALL_MAX_SIZE - self->small_available;
+    memcpy(large.data, self->string.small, large.length);
+    large.data[large.length] = '\0';
     self->string.large = large;
     self->small_available = 0;
     self->is_large = 1;
+    return LIBV_OK;
 }
 
 static inline int vstr_push_char(const vstr_policy* policy, vstr* self,
@@ -173,7 +182,9 @@ static inline int vstr_push_char(const vstr_policy* policy, vstr* self,
         return vstr_large_push_char(policy, &self->string.large, ch);
     }
     if (self->small_available == 0) {
-        vstr_make_large(policy, self);
+        if (vstr_make_large(policy, self, 1) == LIBV_ERR) {
+            return LIBV_ERR;
+        }
         return vstr_large_push_char(policy, &self->string.large, ch);
     }
     self->string.small[VSTR_SMALL_MAX_SIZE - self->small_available] = ch;
@@ -218,7 +229,7 @@ static inline int vstr_cat_string_length(const vstr_policy* policy, vstr* self,
                                             string_size);
     }
     if (self->small_available < string_size) {
-        vstr_make_large(policy, self);
+        vstr_make_large(policy, self, string_size);
         return vstr_large_cat_string_length(policy, &self->string.large, string,
                                             string_size);
     }
@@ -231,6 +242,25 @@ static inline int vstr_cat_string_length(const vstr_policy* policy, vstr* self,
 static inline int vstr_cat_string(const vstr_policy* policy, vstr* self,
                                   const char* string) {
     return vstr_cat_string_length(policy, self, string, vstr_strlen_u8(string));
+}
+
+static inline int vstr_cat_vstr(const vstr_policy* policy, vstr* self,
+                                const vstr* other) {
+    if (other->is_large) {
+        return vstr_cat_string_length(policy, self, other->string.large.data,
+                                      other->string.large.length);
+    }
+    return vstr_cat_string_length(policy, self, other->string.small,
+                                  VSTR_SMALL_MAX_SIZE - other->small_available);
+}
+
+static inline void vstr_clear(const vstr_policy* policy, vstr* self) {
+    if (self->is_large) {
+        policy->alloc->free(self->string.large.data);
+    }
+    self->small_available = VSTR_SMALL_MAX_SIZE;
+    self->is_large = 0;
+    self->string.small[0] = '\0';
 }
 
 #define VSTR_DECLARE_DEFAULT(name_)                                            \
@@ -288,6 +318,12 @@ static inline int vstr_cat_string(const vstr_policy* policy, vstr* self,
         name_* self, const char* string, uint64_t string_size) {               \
         return vstr_cat_string_length(&policy_, &self->string, string,         \
                                       string_size);                            \
+    }                                                                          \
+    static inline int name_##_cat_##name_(name_* self, const name_* other) {   \
+        return vstr_cat_vstr(&policy_, &self->string, &other->string);         \
+    }                                                                          \
+    static inline void name_##_clear(name_* self) {                            \
+        vstr_clear(&policy_, &self->string);                                   \
     }                                                                          \
     LIBV_END                                                                   \
     /* Force a semicolon. */ struct name_##_needstrailingsemicolon_ { int x; }
