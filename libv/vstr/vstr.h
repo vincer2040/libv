@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+LIBV_BEGIN
+
 typedef struct {
     void* (*alloc)(size_t size);
     void* (*realloc)(void* ptr, size_t size);
@@ -132,7 +134,7 @@ static inline int vstr_set_length(const vstr_policy* policy, vstr* self,
                    "(%lu) greater than VSTR_SMALL_MAX_SIZE",
                    length);
     }
-    self->small_available = VSTR_SMALL_MAX_SIZE - length;
+    self->small_available = VSTR_SMALL_MAX_SIZE - (uint8_t)length;
     return LIBV_OK;
 }
 
@@ -140,7 +142,110 @@ static inline bool vstr_is_small(const vstr* self) { return !self->is_large; }
 
 static inline bool vstr_is_large(const vstr* self) { return self->is_large; }
 
+static inline int vstr_large_push_char(const vstr_policy* policy,
+                                       vstr_large* self, char ch) {
+    if (self->length >= self->capacity - 1) {
+        uint64_t new_capacity = self->capacity << 1;
+        void* tmp = policy->alloc->realloc(self->data, new_capacity);
+        if (!tmp) {
+            return LIBV_ERR;
+        }
+        self->capacity = new_capacity;
+        self->data = tmp;
+    }
+    self->data[self->length++] = ch;
+    self->data[self->length] = '\0';
+    return LIBV_OK;
+}
+
+static inline void vstr_make_large(const vstr_policy* policy, vstr* self) {
+    vstr_large large =
+        vstr_large_from_length(policy, self->string.small, VSTR_SMALL_MAX_SIZE - self->small_available);
+    self->string.large = large;
+    self->small_available = 0;
+    self->is_large = 1;
+}
+
+static inline int vstr_push_char(const vstr_policy* policy, vstr* self,
+                                 char ch) {
+    if (self->is_large) {
+        return vstr_large_push_char(policy, &self->string.large, ch);
+    }
+    if (self->small_available == 0) {
+        vstr_make_large(policy, self);
+        return vstr_large_push_char(policy, &self->string.large, ch);
+    }
+    self->string.small[VSTR_SMALL_MAX_SIZE - self->small_available] = ch;
+    self->small_available--;
+    return LIBV_OK;
+}
+
+static inline int vstr_large_make_available(const vstr_policy* policy, vstr_large* self, uint64_t size) {
+    if (self->capacity - 1 > self->length + size) {
+        return LIBV_OK;
+    }
+    uint64_t new_capacity = self->length + size + 1;
+    void* tmp = policy->alloc->realloc(self->data, new_capacity);
+    if (tmp == NULL) {
+        return LIBV_OK;
+    }
+    self->data = tmp;
+    self->data[self->length] = '\0';
+    self->capacity = new_capacity;
+    return LIBV_OK;
+}
+
+static inline int vstr_large_cat_string_length(const vstr_policy* policy,
+                                               vstr_large* self,
+                                               const char* string,
+                                               uint64_t string_size) {
+    if (vstr_large_make_available(policy, self, string_size) == LIBV_ERR) {
+        return LIBV_ERR;
+    }
+    memcpy(self->data + self->length, string, string_size);
+    self->length += string_size;
+    self->data[self->length] = '\0';
+    return LIBV_OK;
+}
+
+static inline int vstr_cat_string_length(const vstr_policy* policy, vstr* self,
+                                         const char* string,
+                                         uint64_t string_size) {
+    if (self->is_large) {
+        return vstr_large_cat_string_length(policy, &self->string.large, string,
+                                            string_size);
+    }
+    if (self->small_available < string_size) {
+        vstr_make_large(policy, self);
+        return vstr_large_cat_string_length(policy, &self->string.large, string,
+                                            string_size);
+    }
+    memcpy(self->string.small + (VSTR_SMALL_MAX_SIZE - self->small_available),
+           string, string_size);
+    self->small_available -= string_size;
+    return LIBV_OK;
+}
+
+static inline int vstr_cat_string(const vstr_policy* policy, vstr* self,
+                                  const char* string) {
+    return vstr_cat_string_length(policy, self, string, strlen(string));
+}
+
+#define VSTR_DECLARE_DEFAULT(name_)                                            \
+    const vstr_alloc_policy name_##_alloc_policy = {                           \
+        .alloc = libv_default_alloc,                                           \
+        .realloc = libv_default_realloc,                                       \
+        .free = libv_default_free,                                             \
+    };                                                                         \
+    const vstr_encoding_policy name_##_encoding = VSTR_ENCODING_UTF8;          \
+    const vstr_policy name_##_policy = {                                       \
+        .alloc = &name_##_alloc_policy,                                        \
+        .encoding = name_##_encoding,                                          \
+    };                                                                         \
+    VSTR_DECLARE(name_, name_##_policy)
+
 #define VSTR_DECLARE(name_, policy_)                                           \
+    LIBV_BEGIN                                                                 \
     typedef struct {                                                           \
         vstr string;                                                           \
     } name_;                                                                   \
@@ -173,19 +278,19 @@ static inline bool vstr_is_large(const vstr* self) { return self->is_large; }
     static inline bool name_##_is_large(const name_* self) {                   \
         return vstr_is_large(&self->string);                                   \
     }                                                                          \
+    static inline int name_##_push_char(name_* self, char ch) {                \
+        return vstr_push_char(&policy_, &self->string, ch);                    \
+    }                                                                          \
+    static inline int name_##_cat_string(name_* self, const char* string) {    \
+        return vstr_cat_string(&policy_, &self->string, string);               \
+    }                                                                          \
+    static inline int name_##_cat_string_length(                               \
+        name_* self, const char* string, uint64_t string_size) {               \
+        return vstr_cat_string_length(&policy_, &self->string, string,         \
+                                      string_size);                            \
+    }                                                                          \
+    LIBV_END                                                                   \
     /* Force a semicolon. */ struct name_##_needstrailingsemicolon_ { int x; }
 
-#define VSTR_DECLARE_DEFAULT(name_)                                            \
-    const vstr_alloc_policy name_##_alloc_policy = {                           \
-        .alloc = libv_default_alloc,                                           \
-        .realloc = libv_default_realloc,                                       \
-        .free = libv_default_free,                                             \
-    };                                                                         \
-    const vstr_encoding_policy name_##_encoding = VSTR_ENCODING_UTF8;          \
-    const vstr_policy name_##_policy = {                                       \
-        .alloc = &name_##_alloc_policy,                                        \
-        .encoding = name_##_encoding,                                          \
-    };                                                                         \
-    VSTR_DECLARE(name_, name_##_policy)
-
+LIBV_END
 #endif // __VSTR_H__
