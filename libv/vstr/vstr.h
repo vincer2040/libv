@@ -7,7 +7,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <uchar.h>
 
 LIBV_BEGIN
 
@@ -17,14 +16,7 @@ typedef struct {
     void (*free)(void* ptr);
 } vstr_alloc_policy;
 
-typedef enum {
-    VSTR_ENCODING_UTF8 = 1,
-    VSTR_ENCODING_UTF16 = 2,
-    VSTR_ENCODING_UTF32 = 4,
-} vstr_encoding_policy;
-
 typedef struct {
-    const vstr_encoding_policy encoding;
     const vstr_alloc_policy* alloc;
 } vstr_policy;
 
@@ -49,20 +41,6 @@ typedef struct {
 
 static inline uint64_t vstr_strlen_u8(const char* s) {
     const char* s_ = s;
-    for (; *s_; ++s_) {
-    }
-    return s_ - s;
-}
-
-static inline uint64_t vstr_strlen_u16(const char16_t* s) {
-    const char16_t* s_ = s;
-    for (; *s_; ++s_) {
-    }
-    return s_ - s;
-}
-
-static inline uint64_t vstr_strlen_u32(const char32_t* s) {
-    const char32_t* s_ = s;
     for (; *s_; ++s_) {
     }
     return s_ - s;
@@ -261,10 +239,8 @@ static inline int vstr_cat_string(const vstr_policy* policy, vstr* self,
         .realloc = libv_default_realloc,                                       \
         .free = libv_default_free,                                             \
     };                                                                         \
-    const vstr_encoding_policy name_##_encoding = VSTR_ENCODING_UTF8;          \
     const vstr_policy name_##_policy = {                                       \
         .alloc = &name_##_alloc_policy,                                        \
-        .encoding = name_##_encoding,                                          \
     };                                                                         \
     VSTR_DECLARE(name_, name_##_policy)
 
