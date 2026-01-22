@@ -46,7 +46,7 @@ int vtest_run_tests(void);
 #define TEST(suite_name_, test_name_)                                          \
     static void vtest_##suite_name_##_##test_name_(void);                      \
     __attribute__((constructor)) static void                                   \
-        vstr_register_##suite_name_##_##test_name(void) {                     \
+        vtest_register_##suite_name_##_##test_name_(void) {                     \
         test t = {                                                             \
             .suite_name = #suite_name_,                                        \
             .test_name = #test_name_,                                          \
