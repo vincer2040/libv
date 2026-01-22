@@ -10,12 +10,56 @@
 
 #define LIBV_UNUSED(x_) ((void)x_)
 
+#ifdef __clang__
+#define LIBV_IS_CLANG 1
+#else
+#define LIBV_IS_CLANG 0
+#endif // __clang__
+
+#if defined(__GNUC__)
+#define LIBV_IS_GCCISH 1
+#else
+#define LIBV_IS_GCCISH 0
+#endif // __GNUC__
+
+#if defined(_MSC_VER)
+#define LIBV_IS_MSCVISH 1
+#else
+#define LIBV_IS_MSCVISH 0
+#endif // _MSC_VER
+
+#define LIBV_PRAGMA(pragma_) _Pragma(#pragma_)
+
+#if LIBV_IS_GCCISH
+#define LIBV_GCC_PUSH LIBV_PRAGMA(GCC diagnostic push)
+#define LIBV_GCC_ALLOW(w_) LIBV_PRAGMA(GCC diagnostic ignored w_)
+#define LIBV_GCC_POP LIBV_PRAGMA(GCC diagnostic pop)
+#else
+#define LIBV_GCC_PUSH
+#define LIBV_GCC_ALLOW(w_)
+#define LIBV_GCC_POP
+#endif
+
+#define LIBV_IS_GCC (LIBV_IS_GCCISH && !LIBV_IS_CLANG)
+#define LIBV_IS_MSVC (LIBV_IS_MSCVISH && !LIBV_IS_CLANG)
+
 #define libv_panic(fmt, ...) do {\
     fprintf(stderr, "LIBV PANIC (%s:%d) ", __FILE__, __LINE__);\
     fprintf(stderr, fmt, __VA_ARGS__);\
     fflush(stdout);\
     abort();\
 } while (0)
+
+#define LIBV_BEGIN                                                             \
+    LIBV_GCC_PUSH                                                            \
+    LIBV_GCC_ALLOW("-Wunused-function")                                      \
+    LIBV_GCC_ALLOW("-Wunused-parameter")                                     \
+    LIBV_GCC_ALLOW("-Wcast-qual")                                            \
+    LIBV_GCC_ALLOW("-Wmissing-field-initializers")
+
+#define LIBV_END LIBV_GCC_POP
+
+LIBV_BEGIN
 
 static inline void* libv_default_alloc(size_t size) {
     void* ptr = malloc(size);
@@ -37,5 +81,7 @@ static inline void libv_default_free(void* ptr) {
     free(ptr);
     ptr = NULL;
 }
+
+LIBV_END
 
 #endif // __LIBV_BASE_H__
