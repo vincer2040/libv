@@ -1,5 +1,5 @@
-#include "vstr.h"
 #include "libv/vtest/vtest.h"
+#include "vstr.h"
 
 VSTR_DECLARE_DEFAULT(u8test);
 
@@ -63,6 +63,45 @@ TEST(u8_vstr, cat_string) {
     u8test_free(&t);
 }
 
-int main(void) {
-    return vtest_run_tests();
+TEST(u8_vstr, fast_cmp) {
+    u8test t1 = u8test_from("foo");
+    u8test t2 = u8test_from("bar");
+
+    assert_int_ne(u8test_fast_cmp(&t1, &t2), 0);
+
+    t1 = u8test_from("foo");
+    t2 = u8test_from("foo");
+
+    assert_int_eq(u8test_fast_cmp(&t1, &t2), 0);
+
+    t1 = u8test_from("foobar");
+    t2 = u8test_from("foo");
+
+    assert_int_ne(u8test_fast_cmp(&t1, &t2), 0);
+
+    printf("%d\n", memcmp("abc", "def", 3));
 }
+
+TEST(u8_vstr, cmp) {
+    u8test t1 = u8test_from("foo");
+    u8test t2 = u8test_from("bar");
+
+    assert_int_ne(u8test_cmp(&t1, &t2), 0);
+
+    t1 = u8test_from("foo");
+    t2 = u8test_from("foo");
+
+    assert_int_eq(u8test_cmp(&t1, &t2), 0);
+
+    t1 = u8test_from("foobar");
+    t2 = u8test_from("foo");
+
+    assert_int_eq(u8test_cmp(&t1, &t2), 1);
+
+    t1 = u8test_from("foo");
+    t2 = u8test_from("foobar");
+
+    assert_int_eq(u8test_cmp(&t1, &t2), -1);
+}
+
+int main(void) { return vtest_run_tests(); }
