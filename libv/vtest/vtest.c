@@ -121,6 +121,30 @@ void _assert(bool cond, const char* cond_str, const char* file, int line) {
 
 static void vtest_destroy(void) { free(ts.tests); }
 
+void vtest_list_tests(void) {
+    for (size_t i = 0; i < ts.length; ++i) {
+        printf("%s.%s\n", ts.tests[i].suite_name, ts.tests[i].test_name);
+    }
+    vtest_destroy();
+}
+
+int vtest_run_test(const char* suite_name, const char* test_name) {
+    size_t suite_name_length = strlen(suite_name);
+    size_t test_name_length = strlen(suite_name);
+    bool found = false;
+    for (size_t i = 0; i < ts.length; ++i) {
+        test* t = &ts.tests[i];
+        if (strncmp(suite_name, t->suite_name, suite_name_length) == 0 &&
+                strncmp(test_name, t->test_name, test_name_length) == 0) {
+            t->test_fn();
+        }
+        vtest_destroy();
+        return failed;
+    }
+    vtest_destroy();
+    return 1;
+}
+
 int vtest_run_tests(void) {
     size_t amount_to_print = ts.longest_name + 3;
     size_t num_passed = 0;
