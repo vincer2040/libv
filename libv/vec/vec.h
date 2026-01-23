@@ -56,12 +56,8 @@ static inline size_t vec_raw_capacity(const vec_raw* self) {
     return self->capacity;
 }
 
-static inline int vec_raw_maybe_resize(const vec_policy* policy,
-                                       vec_raw* self) {
-    if (self->size < self->capacity) {
-        return LIBV_OK;
-    }
-    size_t new_capacity = self->capacity == 0 ? 4 : self->capacity << 1;
+static inline int vec_raw_realloc_self(const vec_policy* policy, vec_raw* self,
+                                       size_t new_capacity) {
     void* tmp =
         policy->alloc->realloc(self->data, new_capacity * policy->obj->size);
     if (!tmp) {
@@ -72,13 +68,46 @@ static inline int vec_raw_maybe_resize(const vec_policy* policy,
     return LIBV_OK;
 }
 
+static inline int vec_raw_maybe_resize(const vec_policy* policy,
+                                       vec_raw* self) {
+    if (self->size < self->capacity) {
+        return LIBV_OK;
+    }
+    size_t new_capacity = self->capacity == 0 ? 4 : self->capacity << 1;
+    return vec_raw_realloc_self(policy, self, new_capacity);
+}
+
+static inline int vec_raw_reserve(const vec_policy* policy, vec_raw* self,
+                                  size_t capacity) {
+    if (self->capacity > capacity) {
+        return LIBV_OK;
+    }
+    return vec_raw_realloc_self(policy, self, capacity);
+}
+
 static inline int vec_raw_push_back(const vec_policy* policy, vec_raw* self,
                                     const void* value) {
     if (vec_raw_maybe_resize(policy, self) == LIBV_ERR) {
         return LIBV_ERR;
     }
-    memcpy(self->data + (self->size * policy->obj->size), value,
-           policy->obj->size);
+    policy->obj->copy(self->data + (self->size * policy->obj->size), value);
+    self->size++;
+    return LIBV_OK;
+}
+
+static inline int vec_raw_push_front(const vec_policy* policy, vec_raw* self,
+                                     const void* value) {
+    if (vec_raw_maybe_resize(policy, self) == LIBV_ERR) {
+        return LIBV_ERR;
+    }
+    if (self->size == 0) {
+        policy->obj->copy(self->data, value);
+        self->size++;
+        return LIBV_OK;
+    }
+    memmove(self->data + policy->obj->size, self->data,
+            self->size * policy->obj->size);
+    policy->obj->copy(self->data, value);
     self->size++;
     return LIBV_OK;
 }
@@ -141,6 +170,11 @@ static inline int vec_raw_remove_at(const vec_policy* policy, vec_raw* self,
     return LIBV_OK;
 }
 
+static inline int vec_raw_pop_front(const vec_policy* policy, vec_raw* self,
+                                    void* out) {
+    return vec_raw_remove_at(policy, self, 0, out);
+}
+
 typedef struct {
     vec_raw* vec;
     size_t position;
@@ -201,11 +235,20 @@ static inline void vec_raw_iter_next(vec_raw_iter* self) { self->position++; }
     static inline size_t name_##_capacity(const name_* self) {                 \
         return vec_raw_capacity(&self->vec);                                   \
     }                                                                          \
+    static inline int name_##_reserve(name_* self, size_t new_capacity) {      \
+        return vec_raw_reserve(&policy_, &self->vec, new_capacity);            \
+    }                                                                          \
     static inline int name_##_push_back(name_* self, type_* value) {           \
         return vec_raw_push_back(&policy_, &self->vec, value);                 \
     }                                                                          \
+    static inline int name_##_push_front(name_* self, type_* value) {          \
+        return vec_raw_push_front(&policy_, &self->vec, value);                \
+    }                                                                          \
     static inline int name_##_pop_back(name_* self, type_* out) {              \
         return vec_raw_pop_back(&policy_, &self->vec, out);                    \
+    }                                                                          \
+    static inline int name_##_pop_front(name_* self, type_* out) {             \
+        return vec_raw_pop_front(&policy_, &self->vec, out);                   \
     }                                                                          \
     static inline const type_* name_##_get_at(const name_* self,               \
                                               size_t index) {                  \
