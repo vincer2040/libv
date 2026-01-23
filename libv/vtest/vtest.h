@@ -29,7 +29,7 @@ void _assert_int_eq(int64_t a, int64_t b, const char* vara, const char* varb,
                     const char* file, int line);
 void _assert_uint_eq(uint64_t a, uint64_t b, const char* vara, const char* varb,
                      const char* file, int line);
-void _assert_int_eq(int64_t a, int64_t b, const char* vara, const char* varb,
+void _assert_int_ne(int64_t a, int64_t b, const char* vara, const char* varb,
                     const char* file, int line);
 void _assert_uint_ne(uint64_t a, uint64_t b, const char* vara, const char* varb,
                      const char* file, int line);
