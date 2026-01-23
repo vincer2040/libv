@@ -45,6 +45,8 @@ void _assert_ptr_null(const void* a, const char* vara, const char* file,
                       int line);
 void _assert(bool cond, const char* cond_str, const char* file, int line);
 int vtest_run_tests(void);
+void vtest_list_tests(void);
+int vtest_run_test(const char* suite_name, const char* test_name);
 
 #define TEST(suite_name_, test_name_)                                          \
     static void vtest_##suite_name_##_##test_name_(void);                      \
@@ -85,5 +87,22 @@ int vtest_run_tests(void);
 #define assert_ptr_null(a_) _assert_ptr_null(a_, #a_, __FILE__, __LINE__)
 
 #define vassert(cond_) _assert(cond_ #cond_, __FiLE__, __LINE__)
+
+#define VTEST_MAIN()                                                           \
+    int main(int argc, char* argv[]) {                                         \
+        if (argc == 1) {                                                       \
+            return vtest_run_tests();                                          \
+        }                                                                      \
+        if (argc == 2 && strcmp(argv[1], "--list-tests") == 0) {               \
+            vtest_list_tests();                                                \
+            return 0;                                                          \
+        }                                                                      \
+        if (argc == 4 && strcmp(argv[1], "--run") == 0) {                      \
+            const char* suite_name = argv[2];                                  \
+            const char* test_name = argv[3];                                   \
+            return vtest_run_test(suite_name, test_name);                      \
+        }                                                                      \
+        return 1;                                                              \
+    }
 
 #endif // __VTEST_H__

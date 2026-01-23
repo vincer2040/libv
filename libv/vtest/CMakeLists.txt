@@ -15,4 +15,3 @@ target_link_libraries(
 )
 
 add_test(NAME vtest COMMAND vtest_test)
-
