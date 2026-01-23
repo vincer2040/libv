@@ -35,12 +35,30 @@ void _assert_int_eq(int64_t a, int64_t b, const char* vara, const char* varb,
               line, vara, varb, vara, a, varb, b);
 }
 
+void _assert_int_ne(int64_t a, int64_t b, const char* vara, const char* varb,
+                    const char* file, int line) {
+    if (a != b) {
+        return;
+    }
+    fail_test("ASSERTION FAILED(%s:%d) %s == %s, %s = %ld, %s = %ld\n", file,
+              line, vara, varb, vara, a, varb, b);
+}
+
 void _assert_uint_eq(uint64_t a, uint64_t b, const char* vara, const char* varb,
                      const char* file, int line) {
     if (a == b) {
         return;
     }
     fail_test("ASSERTION FAILED(%s:%d) %s != %s, %s = %lu, %s = %lu\n", file,
+              line, vara, varb, vara, a, varb, b);
+}
+
+void _assert_uint_ne(uint64_t a, uint64_t b, const char* vara, const char* varb,
+                     const char* file, int line) {
+    if (a != b) {
+        return;
+    }
+    fail_test("ASSERTION FAILED(%s:%d) %s == %s, %s = %lu, %s = %lu\n", file,
               line, vara, varb, vara, a, varb, b);
 }
 
@@ -101,9 +119,7 @@ void _assert(bool cond, const char* cond_str, const char* file, int line) {
     fail_test("ASSERTION FAILED(%s:%d) %s", file, line, cond_str);
 }
 
-static void vtest_destroy(void) {
-    free(ts.tests);
-}
+static void vtest_destroy(void) { free(ts.tests); }
 
 int vtest_run_tests(void) {
     size_t amount_to_print = ts.longest_name + 3;
