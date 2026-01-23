@@ -83,18 +83,18 @@ static inline int vec_raw_push_back(const vec_policy* policy, vec_raw* self,
     return LIBV_OK;
 }
 
+static inline const void* vec_raw_get_at_unchecked(const vec_policy* policy,
+                                                   const vec_raw* self,
+                                                   size_t index) {
+    return self->data + (index * policy->obj->size);
+}
+
 static inline const void* vec_raw_get_at(const vec_policy* policy,
                                          const vec_raw* self, size_t index) {
     if (index >= self->size) {
         return NULL;
     }
-    return self->data + (index * policy->obj->size);
-}
-
-static inline const void* vec_raw_get_at_unchecked(const vec_policy* policy,
-                                                   const vec_raw* self,
-                                                   size_t index) {
-    return self->data + (index * policy->obj->size);
+    return vec_raw_get_at_unchecked(policy, self, index);
 }
 
 static inline int vec_raw_pop_back(const vec_policy* policy, vec_raw* self,
@@ -112,6 +112,53 @@ static inline int vec_raw_pop_back(const vec_policy* policy, vec_raw* self,
     }
     return LIBV_OK;
 }
+
+static inline void vec_raw_remove_at_unchecked(const vec_policy* policy,
+                                               vec_raw* self, size_t index,
+                                               void* out) {
+    if (out) {
+        policy->obj->copy(out, self->data + (index * policy->obj->size));
+    } else {
+        if (policy->obj->dtor) {
+            policy->obj->dtor(self->data + (index * policy->obj->size));
+        }
+    }
+    self->size--;
+    if (index == self->size) {
+        return;
+    }
+    memmove(self->data + (index * policy->obj->size),
+            self->data + ((index + 1) * policy->obj->size),
+            (self->size - index) * policy->obj->size);
+}
+
+static inline int vec_raw_remove_at(const vec_policy* policy, vec_raw* self,
+                                    size_t index, void* out) {
+    if (index >= self->size) {
+        return LIBV_ERR;
+    }
+    vec_raw_remove_at_unchecked(policy, self, index, out);
+    return LIBV_OK;
+}
+
+typedef struct {
+    vec_raw* vec;
+    size_t position;
+} vec_raw_iter;
+
+static inline vec_raw_iter vec_raw_iter_new(vec_raw* self) {
+    return (vec_raw_iter){self, 0};
+}
+
+static inline const void* vec_raw_iter_get(const vec_policy* policy,
+                                           const vec_raw_iter* self) {
+    if (self->position >= self->vec->size) {
+        return NULL;
+    }
+    return self->vec->data + (self->position * policy->obj->size);
+}
+
+static inline void vec_raw_iter_next(vec_raw_iter* self) { self->position++; }
 
 #define VEC_DECLARE_DEFAULT_POLICY_(policy_, type_)                            \
     LIBV_BEGIN                                                                 \
@@ -167,6 +214,26 @@ static inline int vec_raw_pop_back(const vec_policy* policy, vec_raw* self,
     static inline const type_* name_##_get_at_unchecked(const name_* self,     \
                                                         size_t index) {        \
         return vec_raw_get_at_unchecked(&policy_, &self->vec, index);          \
+    }                                                                          \
+    static inline int name_##_remove_at(name_* self, size_t index,             \
+                                        void* out) {                           \
+        return vec_raw_remove_at(&policy_, &self->vec, index, out);            \
+    }                                                                          \
+    static inline void name_##_remove_at_unchecked(name_* self, size_t index,  \
+                                                   void* out) {                \
+        vec_raw_remove_at_unchecked(&policy_, &self->vec, index, out);         \
+    }                                                                          \
+    typedef struct {                                                           \
+        vec_raw_iter it;                                                       \
+    } name_##_iter;                                                            \
+    static inline name_##_iter name_##_iter_new(name_* self) {                 \
+        return (name_##_iter){vec_raw_iter_new(&self->vec)};                   \
+    }                                                                          \
+    static inline const type_* name_##_iter_get(const name_##_iter* self) {    \
+        return (type_*)vec_raw_iter_get(&policy_, &self->it);                  \
+    }                                                                          \
+    static inline void name_##_iter_next(name_##_iter* self) {                 \
+        vec_raw_iter_next(&self->it);                                          \
     }                                                                          \
     LIBV_END                                                                   \
     /* Force a semicolon. */ struct name_##_needstrailingsemicolon_ { int x; }
