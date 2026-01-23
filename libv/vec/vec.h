@@ -81,13 +81,20 @@ static inline int vec_raw_maybe_resize(const vec_policy* policy,
     if (self->size < self->capacity) {
         return LIBV_OK;
     }
-    size_t new_capacity = self->capacity == 0 ? 4 : self->capacity << 1;
+    size_t new_capacity;
+    if (self->capacity == 0) {
+        new_capacity = 4;
+    } else if (self->capacity >= 1024) {
+        new_capacity = self->capacity + (self->capacity / 2);
+    } else {
+        new_capacity = self->capacity << 1;
+    }
     return vec_raw_realloc_self(policy, self, new_capacity);
 }
 
 static inline int vec_raw_reserve(const vec_policy* policy, vec_raw* self,
                                   size_t capacity) {
-    if (self->capacity > capacity) {
+    if (self->capacity >= capacity) {
         return LIBV_OK;
     }
     return vec_raw_realloc_self(policy, self, capacity);
