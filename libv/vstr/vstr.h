@@ -96,8 +96,7 @@ static inline const char* vstr_data(const vstr* self) {
     return self->string.small;
 }
 
-static inline uint64_t vstr_length(const vstr_policy* policy,
-                                   const vstr* self) {
+static inline uint64_t vstr_length(const vstr* self) {
     if (self->is_large) {
         return self->string.large.length;
     }
@@ -112,9 +111,7 @@ static inline uint64_t vstr_capacity(const vstr_policy* policy,
     return VSTR_SMALL_MAX_SIZE;
 }
 
-static inline int vstr_large_set_length(const vstr_policy* policy,
-                                        vstr_large* self, uint64_t length) {
-    LIBV_UNUSED(policy);
+static inline int vstr_large_set_length(vstr_large* self, uint64_t length) {
     if (length >= self->capacity - 1) {
         return LIBV_ERR;
     }
@@ -123,10 +120,9 @@ static inline int vstr_large_set_length(const vstr_policy* policy,
     return LIBV_OK;
 }
 
-static inline int vstr_set_length(const vstr_policy* policy, vstr* self,
-                                  uint64_t length) {
+static inline int vstr_set_length(vstr* self, uint64_t length) {
     if (self->is_large) {
-        return vstr_large_set_length(policy, &self->string.large, length);
+        return vstr_large_set_length(&self->string.large, length);
     }
     if (length > VSTR_SMALL_MAX_SIZE) {
         // the string is in an invalid state.
@@ -263,6 +259,44 @@ static inline void vstr_clear(const vstr_policy* policy, vstr* self) {
     self->string.small[0] = '\0';
 }
 
+static inline int vstr_fast_cmp(const vstr* self, const vstr* other) {
+    uint64_t self_length = vstr_length(self);
+    uint64_t other_length = vstr_length(other);
+    if (self_length != other_length) {
+        return -1;
+    }
+    const char* self_data = vstr_data(self);
+    const char* other_data = vstr_data(other);
+    return memcmp(self_data, other_data, self_length);
+}
+
+static inline int vstr_cmp(const vstr* self, const vstr* other) {
+    uint64_t self_length = vstr_length(self);
+    uint64_t other_length = vstr_length(other);
+    const char* self_data = vstr_data(self);
+    const char* other_data = vstr_data(other);
+
+    int rv;
+
+    if (self_length > other_length) {
+        rv = memcmp(self_data, other_data, other_length);
+        if (rv == 0) {
+            return 1;
+        } else {
+            return -1;
+        }
+    } else if (self_length < other_length) {
+        rv = memcmp(self_data, other_data, self_length);
+        if (rv == 0) {
+            return -1;
+        } else {
+            return 1;
+        }
+    } else {
+        return memcmp(self_data, other_data, self_length);
+    }
+}
+
 #define VSTR_DECLARE_DEFAULT(name_)                                            \
     const vstr_alloc_policy name_##_alloc_policy = {                           \
         .alloc = libv_default_alloc,                                           \
@@ -291,7 +325,7 @@ static inline void vstr_clear(const vstr_policy* policy, vstr* self) {
         vstr_free(&policy_, &self->string);                                    \
     }                                                                          \
     static inline uint64_t name_##_length(const name_* self) {                 \
-        return vstr_length(&policy_, &self->string);                           \
+        return vstr_length(&self->string);                                     \
     }                                                                          \
     static inline uint64_t name_##_capacity(const name_* self) {               \
         return vstr_capacity(&policy_, &self->string);                         \
@@ -300,7 +334,7 @@ static inline void vstr_clear(const vstr_policy* policy, vstr* self) {
         return vstr_data(&self->string);                                       \
     }                                                                          \
     static inline int name_##_set_length(name_* self, uint64_t length) {       \
-        return vstr_set_length(&policy_, &self->string, length);               \
+        return vstr_set_length(&self->string, length);                         \
     }                                                                          \
     static inline bool name_##_is_small(const name_* self) {                   \
         return vstr_is_small(&self->string);                                   \
@@ -324,6 +358,13 @@ static inline void vstr_clear(const vstr_policy* policy, vstr* self) {
     }                                                                          \
     static inline void name_##_clear(name_* self) {                            \
         vstr_clear(&policy_, &self->string);                                   \
+    }                                                                          \
+    static inline int name_##_fast_cmp(const name_* self,                      \
+                                       const name_* other) {                   \
+        return vstr_fast_cmp(&self->string, &other->string);                   \
+    }                                                                          \
+    static inline int name_##_cmp(const name_* self, const name_* other) {     \
+        return vstr_cmp(&self->string, &other->string);                        \
     }                                                                          \
     LIBV_END                                                                   \
     /* Force a semicolon. */ struct name_##_needstrailingsemicolon_ { int x; }
