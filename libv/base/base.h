@@ -40,6 +40,30 @@
 #define LIBV_GCC_POP
 #endif
 
+#ifdef __has_attribute
+#define LIBV_HAVE_GCC_ATTRIBUTE(x_) __has_attribute(x_)
+#else
+#define LIBV_HAVE_GCC_ATTRIBUTE(x_) 0
+#endif // __has_attribute
+
+#ifdef __has_builtin
+#define LIBV_HAVE_CLANG_BUILTIN(x_) __has_builtin(x_)
+#else
+#define LIBV_HAVE_CLANG_BUILTIN(x_) 0
+#endif // __has_builtin
+
+#if LIBV_HAVE_GCC_ATTRIBUTE(always_inline)
+#define LIBV_INLINE_ALWAYS __attribute__((always_inline))
+#else
+#define LIBV_INLINE_ALWAYS
+#endif // always_inline
+
+#if LIBV_HAVE_GCC_ATTRIBUTE(noinline)
+#define LIBV_INLINE_NEVER __attribute__((noinline))
+#else
+#define LIBV_INLINE_NEVER
+#endif // noinline
+
 #define LIBV_IS_GCC (LIBV_IS_GCCISH && !LIBV_IS_CLANG)
 #define LIBV_IS_MSVC (LIBV_IS_MSCVISH && !LIBV_IS_CLANG)
 
