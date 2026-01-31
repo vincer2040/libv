@@ -64,6 +64,14 @@
 #define LIBV_INLINE_NEVER
 #endif // noinline
 
+#if LIBV_HAVE_CLANG_BUILTIN(__builtin_expect) || LIBV_IS_GCC
+  #define LIBV_LIKELY(cond_) (__builtin_expect(false || (cond_), true))
+  #define LIBV_UNLIKELY(cond_) (__builtin_expect(false || (cond_), false))
+#else
+  #define LIBV_LIKELY(cond_) (cond_)
+  #define LIBV_UNLIKELY(cond_) (cond_)
+#endif
+
 #define LIBV_IS_GCC (LIBV_IS_GCCISH && !LIBV_IS_CLANG)
 #define LIBV_IS_MSVC (LIBV_IS_MSCVISH && !LIBV_IS_CLANG)
 
