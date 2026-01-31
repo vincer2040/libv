@@ -89,7 +89,7 @@ int vtest_run_test(const char* suite_name, const char* test_name);
 #define assert_ptr_null(a_) _assert_ptr_null(a_, #a_, __FILE__, __LINE__)
 
 #define assert_true(cond_) _assert_true(cond_, #cond_, __FILE__, __LINE__)
-#define assert_false(cond_) _assert_true(cond_, #cond_, __FILE__, __LINE__)
+#define assert_false(cond_) _assert_false(cond_, #cond_, __FILE__, __LINE__)
 
 #define vassert(cond_) _assert(cond_ #cond_, __FILE__, __LINE__)
 
