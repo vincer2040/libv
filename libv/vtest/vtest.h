@@ -43,6 +43,8 @@ void _assert_ptr_nonnull(const void* a, const char* vara, const char* file,
                          int line);
 void _assert_ptr_null(const void* a, const char* vara, const char* file,
                       int line);
+void _assert_true(bool cond, const char* cond_str, const char* file, int line);
+void _assert_false(bool cond, const char* cond_str, const char* file, int line);
 void _assert(bool cond, const char* cond_str, const char* file, int line);
 int vtest_run_tests(void);
 void vtest_list_tests(void);
@@ -86,7 +88,10 @@ int vtest_run_test(const char* suite_name, const char* test_name);
 
 #define assert_ptr_null(a_) _assert_ptr_null(a_, #a_, __FILE__, __LINE__)
 
-#define vassert(cond_) _assert(cond_ #cond_, __FiLE__, __LINE__)
+#define assert_true(cond_) _assert_true(cond_, #cond_, __FILE__, __LINE__)
+#define assert_false(cond_) _assert_true(cond_, #cond_, __FILE__, __LINE__)
+
+#define vassert(cond_) _assert(cond_ #cond_, __FILE__, __LINE__)
 
 #define VTEST_MAIN()                                                           \
     int main(int argc, char* argv[]) {                                         \

@@ -112,6 +112,20 @@ void _assert_ptr_null(const void* a, const char* vara, const char* file,
     fail_test("ASSERTION FAILED(%s:%d) %s != NULL", file, line, vara);
 }
 
+void _assert_true(bool cond, const char* cond_, const char* file, int line) {
+    if (cond) {
+        return;
+    }
+    fail_test("ASSERTION FAILED(%s:%d) %s != true", file, line, cond_);
+}
+
+void _assert_false(bool cond, const char* cond_, const char* file, int line) {
+    if (!cond) {
+        return;
+    }
+    fail_test("ASSERTION FAILED(%s:%d) %s != false", file, line, cond_);
+}
+
 void _assert(bool cond, const char* cond_str, const char* file, int line) {
     if (cond) {
         return;
