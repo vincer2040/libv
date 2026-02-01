@@ -149,7 +149,7 @@ int vtest_run_test(const char* suite_name, const char* test_name) {
     for (size_t i = 0; i < ts.length; ++i) {
         test* t = &ts.tests[i];
         if (strncmp(suite_name, t->suite_name, suite_name_length) == 0 &&
-                strncmp(test_name, t->test_name, test_name_length) == 0) {
+            strncmp(test_name, t->test_name, test_name_length) == 0) {
             t->test_fn();
         }
         vtest_destroy();
