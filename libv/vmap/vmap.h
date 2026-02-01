@@ -138,6 +138,13 @@ typedef struct {
         key_ key;                                                              \
     } name_##_slot
 
+#define VMAP_DECLARE_MAP_SLOT(name_, key_, value_)                             \
+    typedef struct {                                                           \
+        vmap_control_byte ctrl;                                                \
+        key_ key;                                                              \
+        value_ value;                                                          \
+    } name_##_slot
+
 #define VMAP_DECLARE_SLOT_POLICY(name_, slot_)                                 \
     static inline void name_##_slot_transfer(void* dst, void* src) {           \
         memcpy(dst, src, sizeof(slot_));                                       \
@@ -194,6 +201,10 @@ typedef struct {
 #define VMAP_DECLARE_DEFAULT_SET_POLICY(name_, key_)                           \
     VMAP_DECLARE_SET_SLOT(name_, key_);                                        \
     VMAP_DECLARE_DEFAULT_POLICY_(name_, key_, key_, name_##_slot)
+
+#define VMAP_DECLARE_DEFAULT_MAP_POLICY(name_, key_, value_, type_)            \
+    VMAP_DECLARE_MAP_SLOT(name_, key_, value_);                                \
+    VMAP_DECLARE_DEFAULT_POLICY_(name_, key_, type_, name_##_slot)
 
 static inline size_t vmap_normalize_capacity(size_t capacity) {
     if (capacity <= 16) {
@@ -532,6 +543,14 @@ static inline bool vmap_raw_contains(const vmap_policy* policy,
 #define VMAP_DECLARE_DEFAULT_SET(name_, key_)                                  \
     VMAP_DECLARE_DEFAULT_SET_POLICY(name_, key_);                              \
     VMAP_DECLARE_(name_, name_##_policy, key_, key_)
+
+#define VMAP_DECLARE_DEFAULT_MAP(name_, key_, value_)                          \
+    typedef struct {                                                           \
+        key_ key;                                                              \
+        value_ value;                                                          \
+    } name_##_entry;                                                           \
+    VMAP_DECLARE_DEFAULT_MAP_POLICY(name_, key_, value_, name_##_entry);       \
+    VMAP_DECLARE_(name_, name_##_policy, key_, name_##_entry)
 
 #define VMAP_DECLARE_SET(name_, policy_, key_)                                 \
     VMAP_DECLARE_(name_, policy_, key_, key_)
