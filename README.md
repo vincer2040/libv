@@ -3,7 +3,7 @@
 A collection of useful C libraries.
 
 ## vtest
-# vtest — A Minimal, Zero‑Dependency C Unit Testing Library
+### vtest — A Minimal, Zero‑Dependency C Unit Testing Library
 
 vtest is a lightweight, self‑registering unit testing framework for C. It is designed to be:
 
