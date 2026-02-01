@@ -101,7 +101,7 @@ void _assert_ptr_nonnull(const void* a, const char* vara, const char* file,
     if (a != NULL) {
         return;
     }
-    fail_test("ASSERTION FAILED(%s:%d) %s == NULL", file, line, vara);
+    fail_test("ASSERTION FAILED(%s:%d) %s == NULL\n", file, line, vara);
 }
 
 void _assert_ptr_null(const void* a, const char* vara, const char* file,
@@ -109,14 +109,28 @@ void _assert_ptr_null(const void* a, const char* vara, const char* file,
     if (a == NULL) {
         return;
     }
-    fail_test("ASSERTION FAILED(%s:%d) %s != NULL", file, line, vara);
+    fail_test("ASSERTION FAILED(%s:%d) %s != NULL\n", file, line, vara);
+}
+
+void _assert_true(bool cond, const char* cond_, const char* file, int line) {
+    if (cond) {
+        return;
+    }
+    fail_test("ASSERTION FAILED(%s:%d) %s != true\n", file, line, cond_);
+}
+
+void _assert_false(bool cond, const char* cond_, const char* file, int line) {
+    if (!cond) {
+        return;
+    }
+    fail_test("ASSERTION FAILED(%s:%d) %s != false\n", file, line, cond_);
 }
 
 void _assert(bool cond, const char* cond_str, const char* file, int line) {
     if (cond) {
         return;
     }
-    fail_test("ASSERTION FAILED(%s:%d) %s", file, line, cond_str);
+    fail_test("ASSERTION FAILED(%s:%d) %s\n", file, line, cond_str);
 }
 
 static void vtest_destroy(void) { free(ts.tests); }
