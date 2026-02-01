@@ -65,28 +65,29 @@
 #endif // noinline
 
 #if LIBV_HAVE_CLANG_BUILTIN(__builtin_expect) || LIBV_IS_GCC
-  #define LIBV_LIKELY(cond_) (__builtin_expect(false || (cond_), true))
-  #define LIBV_UNLIKELY(cond_) (__builtin_expect(false || (cond_), false))
+#define LIBV_LIKELY(cond_) (__builtin_expect(false || (cond_), true))
+#define LIBV_UNLIKELY(cond_) (__builtin_expect(false || (cond_), false))
 #else
-  #define LIBV_LIKELY(cond_) (cond_)
-  #define LIBV_UNLIKELY(cond_) (cond_)
+#define LIBV_LIKELY(cond_) (cond_)
+#define LIBV_UNLIKELY(cond_) (cond_)
 #endif
 
 #define LIBV_IS_GCC (LIBV_IS_GCCISH && !LIBV_IS_CLANG)
 #define LIBV_IS_MSVC (LIBV_IS_MSCVISH && !LIBV_IS_CLANG)
 
-#define libv_panic(fmt, ...) do {\
-    fprintf(stderr, "LIBV PANIC (%s:%d) ", __FILE__, __LINE__);\
-    fprintf(stderr, fmt, __VA_ARGS__);\
-    fflush(stdout);\
-    abort();\
-} while (0)
+#define libv_panic(fmt, ...)                                                   \
+    do {                                                                       \
+        fprintf(stderr, "LIBV PANIC (%s:%d) ", __FILE__, __LINE__);            \
+        fprintf(stderr, fmt, __VA_ARGS__);                                     \
+        fflush(stdout);                                                        \
+        abort();                                                               \
+    } while (0)
 
 #define LIBV_BEGIN                                                             \
-    LIBV_GCC_PUSH                                                            \
-    LIBV_GCC_ALLOW("-Wunused-function")                                      \
-    LIBV_GCC_ALLOW("-Wunused-parameter")                                     \
-    LIBV_GCC_ALLOW("-Wcast-qual")                                            \
+    LIBV_GCC_PUSH                                                              \
+    LIBV_GCC_ALLOW("-Wunused-function")                                        \
+    LIBV_GCC_ALLOW("-Wunused-parameter")                                       \
+    LIBV_GCC_ALLOW("-Wcast-qual")                                              \
     LIBV_GCC_ALLOW("-Wmissing-field-initializers")
 
 #define LIBV_END LIBV_GCC_POP
@@ -113,6 +114,19 @@ static inline void libv_default_free(void* ptr) {
     free(ptr);
     ptr = NULL;
 }
+
+static int libv_debug_mode = 0;
+
+static inline void libv_set_debug_mode(int mode) { libv_debug_mode = mode; }
+
+#define libv_debug(fmt, ...)                                                   \
+    do {                                                                       \
+        if (libv_debug_mode) {                                                 \
+            fprintf(stderr, "DEBUG: (%s:%d) ", __FILE__, __LINE__);            \
+            fprintf(stderr, fmt, __VA_ARGS__);                                 \
+            fflush(stderr);                                                    \
+        }                                                                      \
+    } while (0)
 
 LIBV_END
 
