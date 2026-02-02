@@ -351,20 +351,20 @@ static inline void vec_raw_iter_next(vec_raw_iter* self) { self->position++; }
     }                                                                          \
     static inline const type_* name_##_get_at_unchecked(const name_* self,     \
                                                         size_t index) {        \
-        return vec_raw_get_at_unchecked(&policy_, &self->vec, index);          \
+        return (const type_*)vec_raw_get_at_unchecked(&policy_, &self->vec, index);          \
     }                                                                          \
     static inline const type_* name_##_get_at(const name_* self,               \
                                               size_t index) {                  \
-        return vec_raw_get_at(&policy_, &self->vec, index);                    \
+        return (const type_*)vec_raw_get_at(&policy_, &self->vec, index);                    \
     }                                                                          \
     static inline const type_* name_##_data(const name_* self) {               \
-        return vec_raw_data(&self->vec);                                       \
+        return (const type_*)vec_raw_data(&self->vec);                                       \
     }                                                                          \
     static inline const type_* name_##_front(const name_* self) {              \
-        return vec_raw_front(&self->vec);                                      \
+        return (const type_*)vec_raw_front(&self->vec);                                      \
     }                                                                          \
     static inline const type_* name_##_back(const name_* self) {               \
-        return vec_raw_back(&policy_, &self->vec);                             \
+        return (const type_*)vec_raw_back(&policy_, &self->vec);                             \
     }                                                                          \
     static inline void name_##_remove_at_unchecked(name_* self, size_t index,  \
                                                    void* out) {                \
@@ -396,7 +396,7 @@ static inline void vec_raw_iter_next(vec_raw_iter* self) { self->position++; }
         return (name_##_iter){vec_raw_iter_new(&self->vec)};                   \
     }                                                                          \
     static inline const type_* name_##_iter_get(const name_##_iter* self) {    \
-        return (type_*)vec_raw_iter_get(&policy_, &self->it);                  \
+        return (const type_*)vec_raw_iter_get(&policy_, &self->it);                  \
     }                                                                          \
     static inline void name_##_iter_next(name_##_iter* self) {                 \
         vec_raw_iter_next(&self->it);                                          \
