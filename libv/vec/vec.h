@@ -1,3 +1,33 @@
+// BSD 3-Clause License
+//
+// Copyright (c) 2026, vincer2040
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+//    this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef __VEC_H__
 
 #define __VEC_H__
@@ -321,20 +351,21 @@ static inline void vec_raw_iter_next(vec_raw_iter* self) { self->position++; }
     }                                                                          \
     static inline const type_* name_##_get_at_unchecked(const name_* self,     \
                                                         size_t index) {        \
-        return vec_raw_get_at_unchecked(&policy_, &self->vec, index);          \
+        return (const type_*)vec_raw_get_at_unchecked(&policy_, &self->vec,    \
+                                                      index);                  \
     }                                                                          \
     static inline const type_* name_##_get_at(const name_* self,               \
                                               size_t index) {                  \
-        return vec_raw_get_at(&policy_, &self->vec, index);                    \
+        return (const type_*)vec_raw_get_at(&policy_, &self->vec, index);      \
     }                                                                          \
     static inline const type_* name_##_data(const name_* self) {               \
-        return vec_raw_data(&self->vec);                                       \
+        return (const type_*)vec_raw_data(&self->vec);                         \
     }                                                                          \
     static inline const type_* name_##_front(const name_* self) {              \
-        return vec_raw_front(&self->vec);                                      \
+        return (const type_*)vec_raw_front(&self->vec);                        \
     }                                                                          \
     static inline const type_* name_##_back(const name_* self) {               \
-        return vec_raw_back(&policy_, &self->vec);                             \
+        return (const type_*)vec_raw_back(&policy_, &self->vec);               \
     }                                                                          \
     static inline void name_##_remove_at_unchecked(name_* self, size_t index,  \
                                                    void* out) {                \
@@ -366,7 +397,7 @@ static inline void vec_raw_iter_next(vec_raw_iter* self) { self->position++; }
         return (name_##_iter){vec_raw_iter_new(&self->vec)};                   \
     }                                                                          \
     static inline const type_* name_##_iter_get(const name_##_iter* self) {    \
-        return (type_*)vec_raw_iter_get(&policy_, &self->it);                  \
+        return (const type_*)vec_raw_iter_get(&policy_, &self->it);            \
     }                                                                          \
     static inline void name_##_iter_next(name_##_iter* self) {                 \
         vec_raw_iter_next(&self->it);                                          \
