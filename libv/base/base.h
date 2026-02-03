@@ -163,6 +163,24 @@ static inline void libv_set_debug_mode(int mode) { libv_debug_mode = mode; }
         }                                                                      \
     } while (0)
 
+#define libv_assert_(cond_, ...)                                               \
+    do {                                                                       \
+        if (cond_) {                                                           \
+            break;                                                             \
+        }                                                                      \
+        fprintf(stderr, "libv_assert FAILED (%s:%d) ", __FILE__, __LINE__);    \
+        fprintf(stderr, __VA_ARGS__);                                          \
+        fprintf(stderr, "\n");                                                 \
+        fflush(stderr);                                                        \
+        abort();                                                               \
+    } while (0)
+
+#ifdef NDEBUG
+#define libv_assert ((void)0)
+#else
+#define libv_assert libv_assert_
+#endif
+
 LIBV_END
 
 #endif // __LIBV_BASE_H__
