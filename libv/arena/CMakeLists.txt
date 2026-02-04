@@ -18,11 +18,6 @@ target_compile_options(arena_test
     -g
 )
 
-target_link_libraries(
-    arena_test
-    vtest
-)
-
 target_include_directories(arena_test PRIVATE
     ${CMAKE_SOURCE_DIR}
 )
