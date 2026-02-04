@@ -18,11 +18,6 @@ target_compile_options(vec_test
     -g
 )
 
-target_link_libraries(
-    vec_test
-    vtest
-)
-
 target_include_directories(vec_test PRIVATE
     ${CMAKE_SOURCE_DIR}
 )

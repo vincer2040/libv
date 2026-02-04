@@ -18,11 +18,6 @@ target_compile_options(vmap_test
     -g
 )
 
-target_link_libraries(
-    vmap_test
-    vtest
-)
-
 target_include_directories(vmap_test PRIVATE
     ${CMAKE_SOURCE_DIR}
 )

@@ -19,11 +19,6 @@ target_compile_options(vstr_test
     -g
 )
 
-target_link_libraries(
-    vstr_test
-    vtest
-)
-
 target_include_directories(vstr_test PRIVATE
     ${CMAKE_SOURCE_DIR}
 )
