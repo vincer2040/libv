@@ -28,9 +28,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __VSTR_H__
+#ifndef __LIBV_VSTR_H__
 
-#define __VSTR_H__
+#define __LIBV_VSTR_H__
 
 #include "libv/base/base.h"
 #include <memory.h>
@@ -400,4 +400,4 @@ static inline int vstr_cmp(const vstr* self, const vstr* other) {
     /* Force a semicolon. */ struct name_##_needstrailingsemicolon_ { int x; }
 
 LIBV_END
-#endif // __VSTR_H__
+#endif // __LIBV_VSTR_H__
