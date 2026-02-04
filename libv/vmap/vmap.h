@@ -28,9 +28,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __VMAP_H__
+#ifndef __LIBV_VMAP_H__
 
-#define __VMAP_H__
+#define __LIBV_VMAP_H__
 
 #include "libv/base/base.h"
 #include "libv/vmap/rapidhash.h"
@@ -587,4 +587,4 @@ static inline bool vmap_raw_contains(const vmap_policy* policy,
 
 LIBV_END
 
-#endif // __VMAP_H__
+#endif // __LIBV_VMAP_H__

@@ -28,9 +28,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __VTEST_H__
+#ifndef __LIBV_VTEST_H__
 
-#define __VTEST_H__
+#define __LIBV_VTEST_H__
 
 #include <float.h>
 #include <math.h>
@@ -305,4 +305,4 @@ failed:
         return 1;                                                              \
     }
 
-#endif // __VTEST_H__
+#endif // __LIBV_VTEST_H__

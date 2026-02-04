@@ -28,9 +28,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __VEC_H__
+#ifndef __LIBV_VEC_H__
 
-#define __VEC_H__
+#define __LIBV_VEC_H__
 
 #include "libv/base/base.h"
 #include <memory.h>
@@ -411,4 +411,4 @@ static inline void vec_raw_iter_next(vec_raw_iter* self) { self->position++; }
 
 LIBV_END
 
-#endif // __VEC_H__
+#endif // __LIBV_VEC_H__
