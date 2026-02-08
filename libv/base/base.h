@@ -129,27 +129,6 @@
 
 LIBV_BEGIN
 
-static inline void* libv_default_alloc(size_t size) {
-    void* ptr = malloc(size);
-    if (!ptr) {
-        libv_panic("failed to allocate %zu bytes\n", size);
-    }
-    return ptr;
-}
-
-static inline void* libv_default_realloc(void* ptr, size_t size) {
-    void* new_ptr = realloc(ptr, size);
-    if (!new_ptr) {
-        libv_panic("failed to re-allocate %p %zu bytes\n", ptr, size);
-    }
-    return new_ptr;
-}
-
-static inline void libv_default_free(void* ptr) {
-    free(ptr);
-    ptr = NULL;
-}
-
 static int libv_debug_mode = 0;
 
 static inline void libv_set_debug_mode(int mode) { libv_debug_mode = mode; }
@@ -180,6 +159,45 @@ static inline void libv_set_debug_mode(int mode) { libv_debug_mode = mode; }
 #else
 #define libv_assert libv_assert_
 #endif
+
+typedef struct {
+    void* (*alloc)(size_t size, size_t align);
+    void* (*calloc)(size_t nmem, size_t size);
+    void* (*realloc)(void* ptr, size_t old_size, size_t new_size, size_t align);
+    void (*free)(void* ptr, size_t size, size_t align);
+} libv_alloc_policy;
+
+typedef struct {
+    void* (*alloc)(size_t size, size_t align);
+    void (*free)(void* ptr, size_t size, size_t align);
+} libv_basic_alloc_policy;
+
+static inline void* libv_default_alloc(size_t size, size_t align) {
+    LIBV_UNUSED(align);
+    void* ptr = malloc(size);
+    if (!ptr) {
+        libv_panic("failed to allocate %zu bytes\n", size);
+    }
+    return ptr;
+}
+
+static inline void* libv_default_realloc(void* ptr, size_t old_size,
+                                         size_t new_size, size_t align) {
+    LIBV_UNUSED(old_size);
+    LIBV_UNUSED(align);
+    void* new_ptr = realloc(ptr, new_size);
+    if (!new_ptr) {
+        libv_panic("failed to re-allocate %p %zu bytes\n", ptr, new_size);
+    }
+    return new_ptr;
+}
+
+static inline void libv_default_free(void* ptr, size_t size, size_t align) {
+    LIBV_UNUSED(size);
+    LIBV_UNUSED(align);
+    free(ptr);
+    ptr = NULL;
+}
 
 LIBV_END
 

@@ -120,11 +120,6 @@ static inline bool vmap_is_sentinel(vmap_control_byte ctrl) {
 }
 
 typedef struct {
-    void* (*alloc)(size_t size);
-    void (*free)(void* ptr);
-} vmap_alloc_policy;
-
-typedef struct {
     size_t size;
     size_t align;
     void (*transfer)(void* dst, void* src);
@@ -144,22 +139,16 @@ typedef struct {
 } vmap_key_policy;
 
 typedef struct {
-    const vmap_alloc_policy* alloc;
+    const libv_basic_alloc_policy* alloc;
     const vmap_slot_policy* slot;
     const vmap_object_policy* object;
     const vmap_key_policy* key;
 } vmap_policy;
 
 #define VMAP_DECLARE_DEFAULT_ALLOC_POLICY(name_)                               \
-    static inline void* name_##_default_alloc(size_t size) {                   \
-        return libv_default_alloc(size);                                       \
-    }                                                                          \
-    static inline void name_##_default_free(void* ptr) {                       \
-        libv_default_free(ptr);                                                \
-    }                                                                          \
-    static const vmap_alloc_policy name_##_alloc_policy = {                    \
-        .alloc = name_##_default_alloc,                                        \
-        .free = name_##_default_free,                                          \
+    static const libv_basic_alloc_policy name_##_alloc_policy = {              \
+        .alloc = libv_default_alloc,                                           \
+        .free = libv_default_free,                                             \
     }
 
 #define VMAP_DECLARE_SET_SLOT(name_, key_)                                     \
@@ -273,7 +262,8 @@ static inline void vmap_reset_growth_left(vmap_raw* self) {
 
 static inline void vmap_initialize_slots(const vmap_policy* policy,
                                          vmap_raw* self) {
-    char* mem = policy->alloc->alloc(policy->slot->size * self->capacity);
+    char* mem = policy->alloc->alloc(policy->slot->size * self->capacity,
+                                     policy->object->align);
     memset(mem, vmap_empty, policy->slot->size * self->capacity);
     self->slots = mem;
     vmap_reset_growth_left(self);
@@ -352,7 +342,8 @@ static inline void vmap_raw_destroy_slots(const vmap_policy* policy,
 
 static inline void vmap_raw_destroy(const vmap_policy* policy, vmap_raw* self) {
     vmap_raw_destroy_slots(policy, self);
-    policy->alloc->free(self->slots);
+    policy->alloc->free(self->slots, self->capacity * policy->slot->size,
+                        policy->slot->align);
     self->size = self->capacity = self->growth_left = 0;
 }
 
@@ -378,7 +369,8 @@ static inline void vmap_raw_rehash_and_grow(const vmap_policy* policy,
         policy->slot->transfer(self->slots + target * policy->slot->size, slot);
     }
 
-    policy->alloc->free(old_slots);
+    policy->alloc->free(old_slots, old_capacity * policy->slot->size,
+                        policy->slot->align);
 }
 
 typedef struct {

@@ -41,13 +41,7 @@
 LIBV_BEGIN
 
 typedef struct {
-    void* (*alloc)(size_t size);
-    void* (*realloc)(void* ptr, size_t size);
-    void (*free)(void* ptr);
-} vstr_alloc_policy;
-
-typedef struct {
-    const vstr_alloc_policy* alloc;
+    const libv_alloc_policy* alloc;
 } vstr_policy;
 
 typedef struct __attribute__((packed)) {
@@ -86,7 +80,7 @@ static inline vstr_large vstr_large_from_length(const vstr_policy* policy,
                                                 const char* buf,
                                                 uint64_t buf_size) {
     vstr_large self = {0};
-    self.data = policy->alloc->alloc(buf_size + 1);
+    self.data = policy->alloc->alloc(buf_size + 1, _Alignof(char));
     memcpy(self.data, buf, buf_size);
     self.data[buf_size] = '\0';
     self.capacity = buf_size + 1;
@@ -113,7 +107,8 @@ static inline vstr vstr_from(const vstr_policy* policy, const char* buf) {
 
 static inline void vstr_free(const vstr_policy* policy, vstr* self) {
     if (self->is_large) {
-        policy->alloc->free(self->string.large.data);
+        policy->alloc->free(self->string.large.data,
+                            self->string.large.capacity, _Alignof(char));
     }
     memset(self, 0, sizeof *self);
     self->small_available = VSTR_SMALL_MAX_SIZE;
@@ -172,7 +167,8 @@ static inline int vstr_large_push_char(const vstr_policy* policy,
                                        vstr_large* self, char ch) {
     if (self->length >= self->capacity - 1) {
         uint64_t new_capacity = self->capacity << 1;
-        void* tmp = policy->alloc->realloc(self->data, new_capacity);
+        void* tmp = policy->alloc->realloc(self->data, self->capacity,
+                                           new_capacity, _Alignof(char));
         if (!tmp) {
             return LIBV_ERR;
         }
@@ -189,7 +185,7 @@ static inline int vstr_make_large(const vstr_policy* policy, vstr* self,
     vstr_large large = {0};
     large.capacity =
         (VSTR_SMALL_MAX_SIZE - self->small_available) + length_to_add + 1;
-    large.data = policy->alloc->alloc(large.capacity);
+    large.data = policy->alloc->alloc(large.capacity, _Alignof(char));
     if (!large.data) {
         return LIBV_ERR;
     }
@@ -224,7 +220,8 @@ static inline int vstr_large_make_available(const vstr_policy* policy,
         return LIBV_OK;
     }
     uint64_t new_capacity = self->length + size + 1;
-    void* tmp = policy->alloc->realloc(self->data, new_capacity);
+    void* tmp = policy->alloc->realloc(self->data, self->capacity, new_capacity,
+                                       _Alignof(char));
     if (tmp == NULL) {
         return LIBV_OK;
     }
@@ -282,7 +279,8 @@ static inline int vstr_cat_vstr(const vstr_policy* policy, vstr* self,
 
 static inline void vstr_clear(const vstr_policy* policy, vstr* self) {
     if (self->is_large) {
-        policy->alloc->free(self->string.large.data);
+        policy->alloc->free(self->string.large.data,
+                            self->string.large.capacity, _Alignof(char));
     }
     self->small_available = VSTR_SMALL_MAX_SIZE;
     self->is_large = 0;
@@ -328,8 +326,9 @@ static inline int vstr_cmp(const vstr* self, const vstr* other) {
 }
 
 #define VSTR_DECLARE_DEFAULT(name_)                                            \
-    const vstr_alloc_policy name_##_alloc_policy = {                           \
+    const libv_alloc_policy name_##_alloc_policy = {                           \
         .alloc = libv_default_alloc,                                           \
+        .calloc = NULL,                                                        \
         .realloc = libv_default_realloc,                                       \
         .free = libv_default_free,                                             \
     };                                                                         \

@@ -46,12 +46,6 @@ typedef struct {
 } vec_raw;
 
 typedef struct {
-    void* (*alloc)(size_t size);
-    void* (*realloc)(void* ptr, size_t size);
-    void (*free)(void* ptr);
-} vec_alloc_policy;
-
-typedef struct {
     size_t size;
     size_t align;
     void (*copy)(void* dst, const void* src);
@@ -60,7 +54,7 @@ typedef struct {
 } vec_object_policy;
 
 typedef struct {
-    const vec_alloc_policy* alloc;
+    const libv_alloc_policy* alloc;
     const vec_object_policy* obj;
 } vec_policy;
 
@@ -77,7 +71,8 @@ static inline void vec_raw_free(const vec_policy* policy, vec_raw* self) {
             policy->obj->dtor(self->data + (policy->obj->size * i));
         }
     }
-    policy->alloc->free(self->data);
+    policy->alloc->free(self->data, self->capacity * policy->obj->size,
+                        policy->obj->align);
     self->size = 0;
     self->capacity = 0;
 }
@@ -96,8 +91,9 @@ static inline size_t vec_raw_capacity(const vec_raw* self) {
 
 static inline int vec_raw_realloc_self(const vec_policy* policy, vec_raw* self,
                                        size_t new_capacity) {
-    void* tmp =
-        policy->alloc->realloc(self->data, new_capacity * policy->obj->size);
+    void* tmp = policy->alloc->realloc(
+        self->data, self->capacity * policy->obj->size,
+        new_capacity * policy->obj->size, policy->obj->align);
     if (!tmp) {
         return LIBV_ERR;
     }
@@ -311,8 +307,9 @@ static inline void vec_raw_iter_next(vec_raw_iter* self) { self->position++; }
         policy_##_default_eq,                                                  \
         NULL,                                                                  \
     };                                                                         \
-    static const vec_alloc_policy policy_##_alloc_policy = {                   \
+    static const libv_alloc_policy policy_##_alloc_policy = {                  \
         libv_default_alloc,                                                    \
+        NULL,                                                                  \
         libv_default_realloc,                                                  \
         libv_default_free,                                                     \
     };                                                                         \
