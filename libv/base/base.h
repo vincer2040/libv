@@ -154,11 +154,11 @@ static int libv_debug_mode = 0;
 
 static inline void libv_set_debug_mode(int mode) { libv_debug_mode = mode; }
 
-#define libv_debug(fmt, ...)                                                   \
+#define libv_debug(...)                                                        \
     do {                                                                       \
         if (libv_debug_mode) {                                                 \
             fprintf(stderr, "DEBUG: (%s:%d) ", __FILE__, __LINE__);            \
-            fprintf(stderr, fmt, __VA_ARGS__);                                 \
+            fprintf(stderr, __VA_ARGS__);                                      \
             fflush(stderr);                                                    \
         }                                                                      \
     } while (0)
