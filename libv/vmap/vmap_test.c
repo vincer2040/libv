@@ -219,4 +219,33 @@ TEST(vmap, large_table) {
     int_set_destroy(&t);
 }
 
+VMAP_DECLARE_DEFAULT_MAP(int_map, int, int);
+
+TEST(vmap, insert_or_assign) {
+    int_map t = int_map_new(0);
+
+    int_map_entry e = { 1, 1 };
+
+    int_map_insert_result r = int_map_insert_or_assign(&t, &e);
+    assert_true(r.inserted);
+    assert_mem_eq(&e, int_map_iter_get(&r.it), sizeof e);
+
+    int x = 1;
+
+    int_map_iter it = int_map_find(&t, &x);
+    assert_ptr_nonnull(int_map_iter_get(&it));
+    assert_mem_eq(&e, int_map_iter_get(&it), sizeof e);
+
+    e.value = 2;
+    r = int_map_insert_or_assign(&t, &e);
+    assert_false(r.inserted);
+    assert_mem_eq(&e, int_map_iter_get(&r.it), sizeof e);
+
+    it = int_map_find(&t, &x);
+    assert_ptr_nonnull(int_map_iter_get(&it));
+    assert_mem_eq(&e, int_map_iter_get(&it), sizeof e);
+
+    int_map_destroy(&t);
+}
+
 VTEST_MAIN()

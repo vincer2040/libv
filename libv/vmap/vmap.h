@@ -459,6 +459,29 @@ vmap_raw_insert(const vmap_policy* policy, vmap_raw* self, const void* value) {
                                     res.inserted};
 }
 
+static inline vmap_raw_insert_result
+vmap_raw_insert_or_assign(const vmap_policy* policy, vmap_raw* self,
+                          const void* value) {
+    size_t hash = vmap_hash_key(policy, self, value);
+    vmap_prepare_insert res =
+        vmap_raw_find_or_prepare_insert(policy, self, value, hash);
+    if (res.inserted) {
+        policy->object->copy(
+            policy->slot->get(self->slots + res.index * policy->slot->size),
+            value);
+    } else {
+        if (policy->object->dtor) {
+            policy->object->dtor(
+                    policy->slot->get(self->slots + res.index * policy->slot->size));
+        }
+        policy->object->copy(
+            policy->slot->get(self->slots + res.index * policy->slot->size),
+            value);
+    }
+    return (vmap_raw_insert_result){vmap_raw_iter_at(policy, self, res.index),
+                                    res.inserted};
+}
+
 static inline vmap_raw_iter vmap_raw_find_hinted(const vmap_policy* policy,
                                                  const vmap_raw* self,
                                                  const void* key, size_t hash) {
@@ -547,6 +570,12 @@ static inline bool vmap_raw_contains(const vmap_policy* policy,
                                                        const type_* value) {   \
         vmap_raw_insert_result res =                                           \
             vmap_raw_insert(&policy_, &self->set, value);                      \
+        return (name_##_insert_result){(name_##_iter){res.it}, res.inserted};  \
+    }                                                                          \
+    static inline name_##_insert_result name_##_insert_or_assign(              \
+        name_* self, const type_* value) {                                     \
+        vmap_raw_insert_result res =                                           \
+            vmap_raw_insert_or_assign(&policy_, &self->set, value);            \
         return (name_##_insert_result){(name_##_iter){res.it}, res.inserted};  \
     }                                                                          \
     static inline name_##_iter name_##_find(const name_* self,                 \
