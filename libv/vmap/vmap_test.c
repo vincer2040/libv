@@ -172,7 +172,11 @@ size_t max_density_size(size_t n) {
         int_set_insert(&t, &y);
     }
 
-    return int_set_size(&t) - 1;
+    size_t res = int_set_size(&t) - 1;
+
+    int_set_destroy(&t);
+
+    return res;
 }
 
 VEC_DECLARE_DEFAULT(int_vec, int);
@@ -200,6 +204,7 @@ TEST(vmap, insert_erase_stress_test) {
         int_vec_push_back(&keys, &x);
     }
 
+    int_vec_free(&keys);
     int_set_destroy(&t);
 }
 
