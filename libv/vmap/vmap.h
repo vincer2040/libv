@@ -471,8 +471,8 @@ vmap_raw_insert_or_assign(const vmap_policy* policy, vmap_raw* self,
             value);
     } else {
         if (policy->object->dtor) {
-            policy->object->dtor(
-                    policy->slot->get(self->slots + res.index * policy->slot->size));
+            policy->object->dtor(policy->slot->get(
+                self->slots + res.index * policy->slot->size));
         }
         policy->object->copy(
             policy->slot->get(self->slots + res.index * policy->slot->size),
@@ -526,6 +526,10 @@ static inline bool vmap_raw_erase(const vmap_policy* policy, vmap_raw* self,
     }
     vmap_raw_erase_at(policy, self, (vmap_raw_iter_mut*)&it);
     return true;
+}
+
+static inline void vmap_raw_clear(const vmap_policy* policy, vmap_raw* self) {
+    vmap_raw_destroy_slots(policy, self);
 }
 
 static inline bool vmap_raw_contains(const vmap_policy* policy,
@@ -584,6 +588,9 @@ static inline bool vmap_raw_contains(const vmap_policy* policy,
     }                                                                          \
     static inline bool name_##_erase(name_* self, const key_* key) {           \
         return vmap_raw_erase(&policy_, &self->set, key);                      \
+    }                                                                          \
+    static inline void name_##_clear(name_* self) {                            \
+        vmap_raw_clear(&policy_, &self->set);                                  \
     }                                                                          \
     static inline bool name_##_contains(name_* self, const key_* key) {        \
         return vmap_raw_contains(&policy_, &self->set, key);                   \
