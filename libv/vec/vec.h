@@ -375,13 +375,13 @@ static inline void vec_raw_iter_next(vec_raw_iter* self) { self->position++; }
     static inline int name_##_pop_front(name_* self, type_* out) {             \
         return vec_raw_pop_front(&policy_, &self->vec, out);                   \
     }                                                                          \
-    static inline int name_##_push_front(name_* self, type_* value) {          \
+    static inline int name_##_push_front(name_* self, const type_* value) {          \
         return vec_raw_push_front(&policy_, &self->vec, value);                \
     }                                                                          \
     static inline int name_##_pop_back(name_* self, type_* out) {              \
         return vec_raw_pop_back(&policy_, &self->vec, out);                    \
     }                                                                          \
-    static inline int name_##_push_back(name_* self, type_* value) {           \
+    static inline int name_##_push_back(name_* self, const type_* value) {           \
         return vec_raw_push_back(&policy_, &self->vec, value);                 \
     }                                                                          \
     static inline int name_##_append(name_* self, const name_* other) {        \
