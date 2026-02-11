@@ -163,6 +163,17 @@ static inline const void* vec_raw_data(const vec_raw* self) {
     return self->data;
 }
 
+static inline bool vec_raw_contains(const vec_policy* policy,
+                                    const vec_raw* self, const void* needle) {
+    for (size_t i = 0; i < self->size; ++i) {
+        const void* candidate = self->data + i * policy->obj->size;
+        if (policy->obj->eq(needle, candidate)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static inline const void* vec_raw_front(const vec_raw* self) {
     if (self->size == 0) {
         return NULL;
@@ -358,6 +369,10 @@ static inline void vec_raw_iter_next(vec_raw_iter* self) { self->position++; }
     static inline const type_* name_##_data(const name_* self) {               \
         return (const type_*)vec_raw_data(&self->vec);                         \
     }                                                                          \
+    static inline bool name_##_contains(const name_* self,                     \
+                                        const type_* needle) {                 \
+        return vec_raw_contains(&policy_, &self->vec, needle);                 \
+    }                                                                          \
     static inline const type_* name_##_front(const name_* self) {              \
         return (const type_*)vec_raw_front(&self->vec);                        \
     }                                                                          \
@@ -365,23 +380,23 @@ static inline void vec_raw_iter_next(vec_raw_iter* self) { self->position++; }
         return (const type_*)vec_raw_back(&policy_, &self->vec);               \
     }                                                                          \
     static inline void name_##_remove_at_unchecked(name_* self, size_t index,  \
-                                                   void* out) {                \
+                                                   type_* out) {               \
         vec_raw_remove_at_unchecked(&policy_, &self->vec, index, out);         \
     }                                                                          \
     static inline int name_##_remove_at(name_* self, size_t index,             \
-                                        void* out) {                           \
+                                        type_* out) {                          \
         return vec_raw_remove_at(&policy_, &self->vec, index, out);            \
     }                                                                          \
     static inline int name_##_pop_front(name_* self, type_* out) {             \
         return vec_raw_pop_front(&policy_, &self->vec, out);                   \
     }                                                                          \
-    static inline int name_##_push_front(name_* self, const type_* value) {          \
+    static inline int name_##_push_front(name_* self, const type_* value) {    \
         return vec_raw_push_front(&policy_, &self->vec, value);                \
     }                                                                          \
     static inline int name_##_pop_back(name_* self, type_* out) {              \
         return vec_raw_pop_back(&policy_, &self->vec, out);                    \
     }                                                                          \
-    static inline int name_##_push_back(name_* self, const type_* value) {           \
+    static inline int name_##_push_back(name_* self, const type_* value) {     \
         return vec_raw_push_back(&policy_, &self->vec, value);                 \
     }                                                                          \
     static inline int name_##_append(name_* self, const name_* other) {        \
