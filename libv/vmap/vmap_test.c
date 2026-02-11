@@ -229,7 +229,7 @@ VMAP_DECLARE_DEFAULT_MAP(int_map, int, int);
 TEST(vmap, insert_or_assign) {
     int_map t = int_map_new(0);
 
-    int_map_entry e = { 1, 1 };
+    int_map_entry e = {1, 1};
 
     int_map_insert_result r = int_map_insert_or_assign(&t, &e);
     assert_true(r.inserted);
@@ -251,6 +251,34 @@ TEST(vmap, insert_or_assign) {
     assert_mem_eq(&e, int_map_iter_get(&it), sizeof e);
 
     int_map_destroy(&t);
+}
+
+TEST(vmap, iterates) {
+    int inserts[] = {
+        1, 2, 3, 4, 5, 6, 7, 8,
+    };
+
+    int_set t = int_set_new(0);
+    int_vec v = int_vec_new();
+
+    for (size_t i = 0; i < array_size(inserts); ++i) {
+        int_set_insert(&t, &inserts[i]);
+    }
+
+    for (int_set_iter it = int_set_iter_begin(&t); int_set_iter_get(&it);
+         int_set_iter_next(&it)) {
+        const int* x = int_set_iter_get(&it);
+        int_vec_push_back(&v, x);
+    }
+
+    assert_uint_eq(array_size(inserts), int_vec_size(&v));
+
+    for (size_t i = 0; i < array_size(inserts); ++i) {
+        assert_true(int_vec_contains(&v, &inserts[i]));
+    }
+
+    int_vec_free(&v);
+    int_set_destroy(&t);
 }
 
 VTEST_MAIN()

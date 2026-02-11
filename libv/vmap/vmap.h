@@ -266,6 +266,9 @@ static inline void vmap_initialize_slots(const vmap_policy* policy,
                                      policy->object->align);
     memset(mem, vmap_empty, policy->slot->size * self->capacity);
     self->slots = mem;
+    *((vmap_control_byte*)(self->slots +
+                           (self->capacity - 1) * policy->slot->size)) =
+        vmap_sentinel;
     vmap_reset_growth_left(self);
 }
 
@@ -378,6 +381,30 @@ typedef struct {
     const char* slot;
 } vmap_raw_iter;
 
+static inline void
+vmap_raw_iter_skip_empty_or_deleted(const vmap_policy* policy,
+                                    vmap_raw_iter* it) {
+    if (!it->slot) {
+        return;
+    }
+    while (true) {
+        vmap_control_byte ctrl = vmap_control_byte_from_slot(it->slot);
+        if (vmap_is_sentinel(ctrl)) {
+            it->slot = NULL;
+            break;
+        }
+        if (vmap_is_full(ctrl)) {
+            break;
+        }
+        it->slot += policy->slot->size;
+    }
+}
+
+static inline vmap_raw_iter vmap_raw_iter_begin(const vmap_policy* policy,
+                                                const vmap_raw* self) {
+    return (vmap_raw_iter){self, self->slots};
+}
+
 static inline vmap_raw_iter vmap_raw_iter_at(const vmap_policy* policy,
                                              const vmap_raw* self,
                                              size_t index) {
@@ -390,6 +417,15 @@ static inline const void* vmap_raw_iter_get(const vmap_policy* policy,
         return NULL;
     }
     return policy->slot->get(it->slot);
+}
+
+static inline void vmap_raw_iter_next(const vmap_policy* policy,
+                                      vmap_raw_iter* it) {
+    if (!it->slot) {
+        return;
+    }
+    it->slot += policy->slot->size;
+    vmap_raw_iter_skip_empty_or_deleted(policy, it);
 }
 
 typedef struct {
@@ -563,6 +599,12 @@ static inline bool vmap_raw_contains(const vmap_policy* policy,
     typedef struct {                                                           \
         vmap_raw_iter it;                                                      \
     } name_##_iter;                                                            \
+    static inline name_##_iter name_##_iter_begin(const name_* self) {         \
+        return (name_##_iter){vmap_raw_iter_begin(&policy_, &self->set)};      \
+    }                                                                          \
+    static inline void name_##_iter_next(name_##_iter* it) {                   \
+        vmap_raw_iter_next(&policy_, &it->it);                                 \
+    }                                                                          \
     static inline const type_* name_##_iter_get(const name_##_iter* it) {      \
         return (const type_*)vmap_raw_iter_get(&policy_, &it->it);             \
     }                                                                          \

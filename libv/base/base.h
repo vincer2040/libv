@@ -160,6 +160,8 @@ static inline void libv_set_debug_mode(int mode) { libv_debug_mode = mode; }
 #define libv_assert libv_assert_
 #endif
 
+#define array_size(arr) sizeof arr / sizeof arr[0]
+
 typedef struct {
     void* (*alloc)(size_t size, size_t align);
     void* (*calloc)(size_t nmem, size_t size);
