@@ -121,6 +121,13 @@ static inline const char* vstr_data(const vstr* self) {
     return self->string.small;
 }
 
+static inline char* vstr_mut_data(vstr* self) {
+    if (self->is_large) {
+        return self->string.large.data;
+    }
+    return self->string.small;
+}
+
 static inline uint64_t vstr_length(const vstr* self) {
     if (self->is_large) {
         return self->string.large.length;
@@ -325,6 +332,102 @@ static inline int vstr_cmp(const vstr* self, const vstr* other) {
     }
 }
 
+typedef struct {
+    size_t size;
+    size_t capacity;
+    vstr* data;
+} vstr_array;
+
+static inline int vstr_array_realloc(const vstr_policy* policy,
+                                     vstr_array* self) {
+    size_t new_capacity;
+    if (self->capacity == 0) {
+        new_capacity = 8;
+    } else {
+        new_capacity = self->capacity << 1;
+    }
+    void* tmp =
+        policy->alloc->realloc(self->data, self->capacity * sizeof(vstr),
+                               new_capacity * sizeof(vstr), _Alignof(vstr));
+    if (!tmp) {
+        return LIBV_ERR;
+    }
+    self->data = tmp;
+    self->capacity = new_capacity;
+    return LIBV_OK;
+}
+
+static inline int vstr_array_push(const vstr_policy* policy, vstr_array* self,
+                                  const vstr* item) {
+    if (self->size == self->capacity) {
+        if (vstr_array_realloc(policy, self) == LIBV_ERR) {
+            return LIBV_ERR;
+        }
+    }
+    self->data[self->size++] = *item;
+    return LIBV_OK;
+}
+
+static inline vstr_array vstr_split_char(const vstr_policy* policy,
+                                         const vstr* self, char ch) {
+    vstr_array res = {0};
+    size_t data_length = vstr_length(self);
+    const char* buf = vstr_data(self);
+    const char* start = NULL;
+    const char* end;
+    size_t length;
+    vstr s;
+    for (size_t i = 0; i < data_length; ++i) {
+        if (buf[i] == ch) {
+            if (start == NULL) {
+                s = vstr_new();
+                if (vstr_array_push(policy, &res, &s) == LIBV_ERR) {
+                    goto err;
+                }
+                continue;
+            }
+            end = buf + i - 1;
+            length = end - start + 1;
+            s = vstr_from_length(policy, start, length);
+            if (vstr_array_push(policy, &res, &s) == LIBV_ERR) {
+                goto err;
+            }
+            start = NULL;
+            continue;
+        }
+        if (start == NULL) {
+            start = buf + i;
+        }
+    }
+    if (start == NULL) {
+        s = vstr_new();
+        if (vstr_array_push(policy, &res, &s) == LIBV_ERR) {
+            goto err;
+        }
+    } else {
+        end = buf + data_length - 1;
+        length = end - start + 1;
+        s = vstr_from_length(policy, start, length);
+        if (vstr_array_push(policy, &res, &s) == LIBV_ERR) {
+            goto err;
+        }
+    }
+    return res;
+err:
+    policy->alloc->free(res.data, res.capacity * sizeof(vstr), _Alignof(vstr));
+    memset(&res, 0, sizeof res);
+    return res;
+}
+
+static inline void vstr_array_free(const vstr_policy* policy,
+                                   vstr_array* self) {
+    for (size_t i = 0; i < self->size; ++i) {
+        vstr_free(policy, &self->data[i]);
+    }
+    policy->alloc->free(self->data, self->capacity * sizeof(vstr),
+                        _Alignof(vstr));
+}
+
 #define VSTR_DECLARE_DEFAULT(name_)                                            \
     const libv_alloc_policy name_##_alloc_policy = {                           \
         .alloc = libv_default_alloc,                                           \
@@ -362,6 +465,9 @@ static inline int vstr_cmp(const vstr* self, const vstr* other) {
     static inline const char* name_##_data(const name_* self) {                \
         return vstr_data(&self->string);                                       \
     }                                                                          \
+    static inline char* name_##_mut_data(name_* self) {                        \
+        return vstr_mut_data(&self->string);                                   \
+    }                                                                          \
     static inline int name_##_set_length(name_* self, uint64_t length) {       \
         return vstr_set_length(&self->string, length);                         \
     }                                                                          \
@@ -394,6 +500,19 @@ static inline int vstr_cmp(const vstr* self, const vstr* other) {
     }                                                                          \
     static inline int name_##_cmp(const name_* self, const name_* other) {     \
         return vstr_cmp(&self->string, &other->string);                        \
+    }                                                                          \
+    typedef struct {                                                           \
+        size_t size;                                                           \
+        size_t capacity;                                                       \
+        name_* data;                                                           \
+    } name_##_array;                                                           \
+    static inline name_##_array name_##_split_char(const name_* self,          \
+                                                   char ch) {                  \
+        vstr_array res = vstr_split_char(&policy_, &self->string, ch);         \
+        return (name_##_array){res.size, res.capacity, (name_*)res.data};      \
+    }                                                                          \
+    static inline void name_##_array_free(name_##_array* self) {               \
+        vstr_array_free(&policy_, (vstr_array*)self);                          \
     }                                                                          \
     LIBV_END                                                                   \
     /* Force a semicolon. */ struct name_##_needstrailingsemicolon_ { int x; }
