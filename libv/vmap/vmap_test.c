@@ -172,7 +172,11 @@ size_t max_density_size(size_t n) {
         int_set_insert(&t, &y);
     }
 
-    return int_set_size(&t) - 1;
+    size_t res = int_set_size(&t) - 1;
+
+    int_set_destroy(&t);
+
+    return res;
 }
 
 VEC_DECLARE_DEFAULT(int_vec, int);
@@ -200,6 +204,7 @@ TEST(vmap, insert_erase_stress_test) {
         int_vec_push_back(&keys, &x);
     }
 
+    int_vec_free(&keys);
     int_set_destroy(&t);
 }
 
@@ -216,6 +221,63 @@ TEST(vmap, large_table) {
         assert_int_eq(*int_set_iter_get(&it), i);
     }
 
+    int_set_destroy(&t);
+}
+
+VMAP_DECLARE_DEFAULT_MAP(int_map, int, int);
+
+TEST(vmap, insert_or_assign) {
+    int_map t = int_map_new(0);
+
+    int_map_entry e = {1, 1};
+
+    int_map_insert_result r = int_map_insert_or_assign(&t, &e);
+    assert_true(r.inserted);
+    assert_mem_eq(&e, int_map_iter_get(&r.it), sizeof e);
+
+    int x = 1;
+
+    int_map_iter it = int_map_find(&t, &x);
+    assert_ptr_nonnull(int_map_iter_get(&it));
+    assert_mem_eq(&e, int_map_iter_get(&it), sizeof e);
+
+    e.value = 2;
+    r = int_map_insert_or_assign(&t, &e);
+    assert_false(r.inserted);
+    assert_mem_eq(&e, int_map_iter_get(&r.it), sizeof e);
+
+    it = int_map_find(&t, &x);
+    assert_ptr_nonnull(int_map_iter_get(&it));
+    assert_mem_eq(&e, int_map_iter_get(&it), sizeof e);
+
+    int_map_destroy(&t);
+}
+
+TEST(vmap, iterates) {
+    int inserts[] = {
+        1, 2, 3, 4, 5, 6, 7, 8,
+    };
+
+    int_set t = int_set_new(0);
+    int_vec v = int_vec_new();
+
+    for (size_t i = 0; i < array_size(inserts); ++i) {
+        int_set_insert(&t, &inserts[i]);
+    }
+
+    for (int_set_iter it = int_set_iter_begin(&t); int_set_iter_get(&it);
+         int_set_iter_next(&it)) {
+        const int* x = int_set_iter_get(&it);
+        int_vec_push_back(&v, x);
+    }
+
+    assert_uint_eq(array_size(inserts), int_vec_size(&v));
+
+    for (size_t i = 0; i < array_size(inserts); ++i) {
+        assert_true(int_vec_contains(&v, &inserts[i]));
+    }
+
+    int_vec_free(&v);
     int_set_destroy(&t);
 }
 

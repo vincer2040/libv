@@ -78,8 +78,6 @@ TEST(u8_vstr, fast_cmp) {
     t2 = u8test_from("foo");
 
     assert_int_ne(u8test_fast_cmp(&t1, &t2), 0);
-
-    printf("%d\n", memcmp("abc", "def", 3));
 }
 
 TEST(u8_vstr, cmp) {
@@ -104,4 +102,57 @@ TEST(u8_vstr, cmp) {
     assert_int_eq(u8test_cmp(&t1, &t2), -1);
 }
 
-int main(void) { return vtest_run_tests(); }
+TEST(u8_vstr, split_char) {
+    typedef struct {
+        const char* input;
+        char ch;
+        const char* split[10];
+        size_t num_split;
+    } split_test;
+
+    split_test tests[] = {
+        {
+            "foo\nbar",
+            '\n',
+            {"foo", "bar"},
+            2,
+        },
+        {
+            "foo\n",
+            '\n',
+            {"foo", ""},
+            2,
+        },
+        {
+            "\nfoo",
+            '\n',
+            {"", "foo"},
+            2,
+        },
+        {
+            "foo\n\nbar",
+            '\n',
+            {"foo", "", "bar"},
+            3,
+        },
+        {
+            "foo\nbar\nbaz",
+            '\n',
+            {"foo", "bar", "baz"},
+            3,
+        },
+    };
+
+    for (size_t i = 0; i < array_size(tests); ++i) {
+        split_test t = tests[i];
+        u8test s = u8test_from(t.input);
+        u8test_array a = u8test_split_char(&s, t.ch);
+        assert_uint_eq(a.size, t.num_split);
+        for (size_t j = 0; j < t.num_split; ++j) {
+            assert_str_eq(u8test_data(&a.data[j]), t.split[j]);
+        }
+        u8test_array_free(&a);
+    }
+}
+
+VTEST_MAIN()

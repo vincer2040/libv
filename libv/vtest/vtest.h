@@ -80,8 +80,9 @@ static inline void vtest_add_test_(const test* t) {
         failed = 1;                                                            \
     } while (0)
 
-static inline void _assert_int_eq(int64_t a, int64_t b, const char* vara, const char* varb,
-                    const char* file, int line) {
+static inline void _assert_int_eq(int64_t a, int64_t b, const char* vara,
+                                  const char* varb, const char* file,
+                                  int line) {
     if (a == b) {
         return;
     }
@@ -89,8 +90,9 @@ static inline void _assert_int_eq(int64_t a, int64_t b, const char* vara, const 
               line, vara, varb, vara, a, varb, b);
 }
 
-static inline void _assert_int_ne(int64_t a, int64_t b, const char* vara, const char* varb,
-                    const char* file, int line) {
+static inline void _assert_int_ne(int64_t a, int64_t b, const char* vara,
+                                  const char* varb, const char* file,
+                                  int line) {
     if (a != b) {
         return;
     }
@@ -98,8 +100,9 @@ static inline void _assert_int_ne(int64_t a, int64_t b, const char* vara, const 
               line, vara, varb, vara, a, varb, b);
 }
 
-static inline void _assert_uint_eq(uint64_t a, uint64_t b, const char* vara, const char* varb,
-                     const char* file, int line) {
+static inline void _assert_uint_eq(uint64_t a, uint64_t b, const char* vara,
+                                   const char* varb, const char* file,
+                                   int line) {
     if (a == b) {
         return;
     }
@@ -107,8 +110,9 @@ static inline void _assert_uint_eq(uint64_t a, uint64_t b, const char* vara, con
               line, vara, varb, vara, a, varb, b);
 }
 
-static inline void _assert_uint_ne(uint64_t a, uint64_t b, const char* vara, const char* varb,
-                     const char* file, int line) {
+static inline void _assert_uint_ne(uint64_t a, uint64_t b, const char* vara,
+                                   const char* varb, const char* file,
+                                   int line) {
     if (a != b) {
         return;
     }
@@ -116,8 +120,9 @@ static inline void _assert_uint_ne(uint64_t a, uint64_t b, const char* vara, con
               line, vara, varb, vara, a, varb, b);
 }
 
-static inline void _assert_double_eq(double a, double b, const char* vara, const char* varb,
-                       const char* file, int line) {
+static inline void _assert_double_eq(double a, double b, const char* vara,
+                                     const char* varb, const char* file,
+                                     int line) {
     if (fabs(a - b) < (DBL_EPSILON * fabs(a + b))) {
         return;
     }
@@ -125,8 +130,9 @@ static inline void _assert_double_eq(double a, double b, const char* vara, const
               line, vara, varb, vara, a, varb, b);
 }
 
-static inline void _assert_str_eq(const char* a, const char* b, const char* vara,
-                    const char* varb, const char* file, int line) {
+static inline void _assert_str_eq(const char* a, const char* b,
+                                  const char* vara, const char* varb,
+                                  const char* file, int line) {
     size_t alen = strlen(a);
     size_t blen = strlen(b);
     if (alen != blen) {
@@ -141,8 +147,9 @@ static inline void _assert_str_eq(const char* a, const char* b, const char* vara
     }
 }
 
-static inline void _assert_mem_eq(const void* a, const void* b, size_t size, const char* vara,
-                    const char* varb, const char* file, int line) {
+static inline void _assert_mem_eq(const void* a, const void* b, size_t size,
+                                  const char* vara, const char* varb,
+                                  const char* file, int line) {
     if (memcmp(a, b, size) == 0) {
         return;
     }
@@ -150,37 +157,40 @@ static inline void _assert_mem_eq(const void* a, const void* b, size_t size, con
               line, vara, varb, vara, a, varb, b);
 }
 
-static inline void _assert_ptr_nonnull(const void* a, const char* vara, const char* file,
-                         int line) {
+static inline void _assert_ptr_nonnull(const void* a, const char* vara,
+                                       const char* file, int line) {
     if (a != NULL) {
         return;
     }
     fail_test("ASSERTION FAILED(%s:%d) %s == NULL\n", file, line, vara);
 }
 
-static inline void _assert_ptr_null(const void* a, const char* vara, const char* file,
-                      int line) {
+static inline void _assert_ptr_null(const void* a, const char* vara,
+                                    const char* file, int line) {
     if (a == NULL) {
         return;
     }
     fail_test("ASSERTION FAILED(%s:%d) %s != NULL\n", file, line, vara);
 }
 
-static inline void _assert_true(bool cond, const char* cond_, const char* file, int line) {
+static inline void _assert_true(bool cond, const char* cond_, const char* file,
+                                int line) {
     if (cond) {
         return;
     }
     fail_test("ASSERTION FAILED(%s:%d) %s != true\n", file, line, cond_);
 }
 
-static inline void _assert_false(bool cond, const char* cond_, const char* file, int line) {
+static inline void _assert_false(bool cond, const char* cond_, const char* file,
+                                 int line) {
     if (!cond) {
         return;
     }
     fail_test("ASSERTION FAILED(%s:%d) %s != false\n", file, line, cond_);
 }
 
-static inline void _assert(bool cond, const char* cond_str, const char* file, int line) {
+static inline void _assert(bool cond, const char* cond_str, const char* file,
+                           int line) {
     if (cond) {
         return;
     }
@@ -196,10 +206,11 @@ static inline void vtest_list_tests(void) {
     vtest_destroy();
 }
 
-static inline int vtest_run_test(const char* suite_name, const char* test_name) {
+static inline int vtest_run_test(const char* suite_name,
+                                 const char* test_name) {
     size_t suite_name_length = strlen(suite_name);
     size_t test_name_length = strlen(suite_name);
-    //bool found = false;
+    // bool found = false;
     for (size_t i = 0; i < ts.length; ++i) {
         test* t = &ts.tests[i];
         if (strncmp(suite_name, t->suite_name, suite_name_length) == 0 &&
