@@ -32,6 +32,7 @@
 
 #define __LIBV_VTEST_H__
 
+#include "libv/base/base.h"
 #include <float.h>
 #include <math.h>
 #include <stdbool.h>
@@ -40,6 +41,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+LIBV_BEGIN
 
 typedef struct {
     const char* suite_name;
@@ -256,6 +259,7 @@ failed:
     return 1;
 }
 
+#if LIBV_HAVE_GCC_ATTRIBUTE(constructor)
 #define TEST(suite_name_, test_name_)                                          \
     static void vtest_##suite_name_##_##test_name_(void);                      \
     __attribute__((constructor)) static void                                   \
@@ -268,6 +272,19 @@ failed:
         vtest_add_test_(&t);                                                   \
     }                                                                          \
     static void vtest_##suite_name_##_##test_name_(void)
+#else
+#define TEST(suite_name_, test_name_)                                          \
+    static void vtest_##suite_name_##_##test_name_(void)
+#define vtest_add_test(suite_name_, test_name_)                                \
+    do {                                                                       \
+        test t = {                                                             \
+            .suite_name = #suite_name_,                                        \
+            .test_name = #test_name_,                                          \
+            .test_fn = vtest_##suite_name_##_##test_name_,                     \
+        };                                                                     \
+        vtest_add_test_(&t);                                                   \
+    } while (0)
+#endif
 
 #define assert_int_eq(a_, b_)                                                  \
     _assert_int_eq(a_, b_, #a_, #b_, __FILE__, __LINE__)
@@ -315,5 +332,7 @@ failed:
         }                                                                      \
         return 1;                                                              \
     }
+
+LIBV_END
 
 #endif // __LIBV_VTEST_H__
